@@ -527,6 +527,9 @@ select:focus { outline: none; border-color: var(--brend); }
   background: #F6F2EF;
   font-weight: 600;
 }
+.tg p + p { margin-top: 6px; }
+.tg-sabab { font-weight: 400; font-size: 14px; color: var(--ikkinchi); }
+.tg-qayta { width: 100%; margin-top: 10px; }
 .tg-ok { background: var(--yashil-och); border-color: var(--yashil); }
 .tg-xato { background: var(--sariq-och); border-color: var(--sariq); }
 .kod { margin-top: 16px; font-size: 15px; }

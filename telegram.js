@@ -29,13 +29,21 @@ function telegramXabari(n, j, lid) {
   return qatorlar.join('\n');
 }
 
+// Natija: { ok: true } yoki { ok: false, sabab: '…' } — sabab ekranda koʻrsatiladi.
 async function sorov(url, body) {
   const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
   const taymer = ctrl ? setTimeout(function () { ctrl.abort(); }, TELEGRAM_TIMEOUT) : null;
   try {
     const javob = await fetch(url, { method: 'POST', body: body, signal: ctrl ? ctrl.signal : undefined });
-    const d = await javob.json();
-    return !!(d && d.ok);
+    let d = null;
+    try { d = await javob.json(); } catch (err) { /* JSON emas */ }
+    if (d && d.ok) return { ok: true };
+    return { ok: false, sabab: 'Telegram rad etdi: ' + ((d && d.description) || ('HTTP ' + javob.status)) };
+  } catch (err) {
+    if (err && err.name === 'AbortError') {
+      return { ok: false, sabab: 'Telegram ' + (TELEGRAM_TIMEOUT / 1000) + ' soniyada javob bermadi (internet sekin).' };
+    }
+    return { ok: false, sabab: 'Telegram serveriga ulanib boʻlmadi — internet yoki tarmoq api.telegram.org ni toʻsyapti.' };
   } finally {
     if (taymer) clearTimeout(taymer);
   }
@@ -62,23 +70,27 @@ async function yuborTelegram(n, j, lid, blob, faylNomi) {
   const c = await yangiSozlama();
   const token = String(c.TELEGRAM_BOT_TOKEN || '').trim();
   const chat = String(c.TELEGRAM_CHAT_ID || '').trim();
-  if (!token || !chat) return false;
+  if (!token || !chat) return { ok: false, sabab: 'Saytda bot kaliti yoki guruh ID si sozlanmagan.' };
   const asos = 'https://api.telegram.org/bot' + token;
 
-  try {
-    // Oddiy forma koʻrinishida yuboriladi — brauzer qoʻshimcha ruxsat soʻrovisiz joʻnatadi.
-    const xabar = new URLSearchParams();
-    xabar.append('chat_id', chat);
-    xabar.append('text', telegramXabari(n, j, lid));
-    if (!(await sorov(asos + '/sendMessage', xabar))) return false;
-
-    const fd = new FormData();
-    fd.append('chat_id', chat);
-    fd.append('document', blob, faylNomi);
-    fd.append('caption', lid.filial + ' · ' + oyNomi(j.oy) + ' · ' + lid.kod);
-    return await sorov(asos + '/sendDocument', fd);
-  } catch (err) {
-    console.warn('Telegramʼga yuborilmadi:', err);
-    return false;
+  // Oddiy forma koʻrinishida yuboriladi — brauzer qoʻshimcha ruxsat soʻrovisiz joʻnatadi.
+  const xabar = new URLSearchParams();
+  xabar.append('chat_id', chat);
+  xabar.append('text', telegramXabari(n, j, lid));
+  const r1 = await sorov(asos + '/sendMessage', xabar);
+  if (!r1.ok) {
+    console.warn('Telegram xabar:', r1.sabab);
+    return r1;
   }
+
+  const fd = new FormData();
+  fd.append('chat_id', chat);
+  fd.append('document', blob, faylNomi);
+  fd.append('caption', lid.filial + ' · ' + oyNomi(j.oy) + ' · ' + lid.kod);
+  const r2 = await sorov(asos + '/sendDocument', fd);
+  if (!r2.ok) {
+    console.warn('Telegram PDF:', r2.sabab);
+    return { ok: false, sabab: 'Xabar guruhga ketdi, lekin PDF ketmadi. ' + r2.sabab };
+  }
+  return { ok: true };
 }

@@ -386,13 +386,22 @@ function tgMatni() {
   return 'Moliya boʻlimiga yuborilmoqda…';
 }
 
+function tgBlok() {
+  return '' +
+    '<div class="tg tg-' + (holat.tg || 'kutish') + '" role="status" aria-live="polite">' +
+      '<p>' + tgMatni() + '</p>' +
+      (holat.tg === 'xato' && holat.tgSabab ? '<p class="tg-sabab">Sabab: ' + e(holat.tgSabab) + '</p>' : '') +
+    '</div>' +
+    (holat.tg === 'xato' ? '<button type="button" class="tugma ikkinchi tg-qayta" data-amal="qayta-yuborish">Qayta yuborish</button>' : '');
+}
+
 function yakunEkrani() {
   const p = holat.pdf;
   return '' +
     '<section class="ekran yakun">' +
       '<h1 tabindex="-1">PDF yuklandi</h1>' +
       '<p class="lead">' + e(p.nom) + '</p>' +
-      '<div class="tg tg-' + (holat.tg || 'kutish') + '" data-tg role="status" aria-live="polite">' + tgMatni() + '</div>' +
+      '<div data-tg-blok>' + tgBlok() + '</div>' +
       '<p class="kod">Byudjet kodi: <strong>' + e(holat.lid.kod) + '</strong></p>' +
       '<div class="harakatlar">' +
         '<a class="tugma ikkinchi" href="' + p.url + '" download="' + e(p.nom) + '">PDFni qayta yuklash</a>' +
@@ -522,21 +531,28 @@ async function yuborish() {
   holat.pdf = { blob: blob, nom: nom, url: URL.createObjectURL(blob) };
   pdfniYukla(holat.pdf);
 
-  holat.tg = 'kutish';
   korsat('yakun');
+  telegramgaYubor();
+}
 
-  let ok = false;
+async function telegramgaYubor() {
+  const yangila = function () {
+    const blok = ilova.querySelector('[data-tg-blok]');
+    if (blok) blok.innerHTML = tgBlok();
+  };
+  holat.tg = 'kutish';
+  holat.tgSabab = '';
+  yangila();
+  let natija;
   try {
-    ok = await yuborTelegram(natija, j, l, blob, nom);
+    natija = await yuborTelegram(holat.natija, holat.javob, holat.lid, holat.pdf.blob, holat.pdf.nom);
   } catch (err) {
     console.error(err);
+    natija = { ok: false, sabab: 'Kutilmagan xato: ' + (err && err.message) };
   }
-  holat.tg = ok ? 'ok' : 'xato';
-  const tg = ilova.querySelector('[data-tg]');
-  if (tg) {
-    tg.className = 'tg tg-' + holat.tg;
-    tg.textContent = tgMatni();
-  }
+  holat.tg = natija && natija.ok ? 'ok' : 'xato';
+  holat.tgSabab = natija && natija.sabab;
+  yangila();
 }
 
 function pdfniYukla(p) {
@@ -581,6 +597,8 @@ function hodisalarniUla() {
       korsat(SAVOLLAR_SONI);
     } else if (amal === 'natijaga') {
       korsat('natija');
+    } else if (amal === 'qayta-yuborish') {
+      telegramgaYubor();
     } else if (amal === 'yangi') {
       holat.javob = yangiJavob();
       holat.saqlanganEkran = null;
