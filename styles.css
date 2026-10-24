@@ -336,6 +336,10 @@ select:focus { outline: none; border-color: var(--brend); }
   font-size: 15px;
 }
 
+.maydon + .jonli { margin: 0 0 12px; }
+.jonli.mos { background: var(--yashil-och); }
+.jonli.mos-emas { background: var(--sariq-och); }
+
 .guruh-jami {
   margin-top: 4px;
   padding-top: 12px;

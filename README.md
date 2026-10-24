@@ -60,6 +60,7 @@ Hammasi `app.js` faylining eng boshida:
 - `MEYORLAR` — har bir xarajat guruhining tushumga nisbatan meʼyori (%). Hozirgi qiymatlar **test uchun taxminiy**.
 - `STATUS_CHEGARA` — yashil (marja ≥ 25%) va qizil (marja < 10%) chegaralari, hamda nechta guruh oshganda qizil boʻlishi (3).
 - `SOLIQ_FOIZI` — ijtimoiy soliq (12%).
+- `OQITUVCHI_FOIZI` — oʻqituvchi oylik + avans reja tushumning necha foizi boʻlishi kerak (30%). `OQITUVCHI_RUXSAT` — qancha farqqa ruxsat (0.5 foiz punkti); undan oshsa, ogohlantirish chiqadi.
 
 Faqat raqamlarni almashtiring, vergul va qavslarga tegmang.
 

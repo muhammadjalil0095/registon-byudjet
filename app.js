@@ -27,6 +27,11 @@ const STATUS_CHEGARA = {
 // Ijtimoiy soliq — ish haqi fondidan, %.
 const SOLIQ_FOIZI = 12;
 
+// Oʻqituvchi oylik + avans — reja tushumning shu foizi boʻlishi kerak.
+// Farq ruxsat etilgan chegaradan (foiz punktida) oshsa, ogohlantirish chiqadi.
+const OQITUVCHI_FOIZI = 30;
+const OQITUVCHI_RUXSAT = 0.5;
+
 /* =====================================================================
    2. MAʼLUMOTNOMA: guruhlar, moddalar, statuslar
    ===================================================================== */
@@ -176,6 +181,10 @@ function hisobla(j) {
   const soliqQolda = !!j.soliq_qolda;
   summa.soliq = soliqQolda ? son(j.soliq) : soliqAvto;
 
+  const oqituvchi = summa.oqituvchi_oylik + summa.oqituvchi_avans;
+  const oqituvchiReja = Math.round(tushum * OQITUVCHI_FOIZI / 100);
+  const oqituvchiUlush = ulush(oqituvchi);
+
   const jami = MODDALAR.reduce(function (s, m) { return s + summa[m.id]; }, 0);
   const foyda = tushum - jami;
   const marja = ulush(foyda);
@@ -251,6 +260,10 @@ function hisobla(j) {
   if (soliqQolda && summa.soliq !== soliqAvto) {
     ogohlar.push('Soliq summasi ish haqi fondining ' + SOLIQ_FOIZI + '% iga mos emas.');
   }
+  if (tushum > 0 && Math.abs(oqituvchiUlush - OQITUVCHI_FOIZI) > OQITUVCHI_RUXSAT) {
+    ogohlar.push('Oʻqituvchi oylik va avansi tushumning ' + formatFoiz(oqituvchiUlush) + ' i. ' +
+      OQITUVCHI_FOIZI + '% boʻlishi kerak: ' + formatSom(oqituvchiReja) + '.');
+  }
   if (summa.menejer_avans > summa.menejer_oylik || summa.oqituvchi_avans > summa.oqituvchi_oylik) {
     ogohlar.push('Avans oylikdan koʻp kiritilgan.');
   }
@@ -263,6 +276,9 @@ function hisobla(j) {
     fond: fond,
     soliqAvto: soliqAvto,
     soliq: summa.soliq,
+    oqituvchi: oqituvchi,
+    oqituvchiReja: oqituvchiReja,
+    oqituvchiUlush: oqituvchiUlush,
     jami: jami,
     foyda: foyda,
     marja: marja,

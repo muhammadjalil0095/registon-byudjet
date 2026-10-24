@@ -266,7 +266,8 @@ function savolEkrani(n) {
     if (ek.tushum) tana += '<p class="jonli" data-jonli="tushum" aria-live="polite"></p>';
   } else if (ek.tur === 'guruh') {
     tana = moddalarEkrani(n).filter(function (m) { return !m.shart; }).map(function (m) {
-      return summaMaydoni(m, inputQiymati(m.id));
+      return summaMaydoni(m, inputQiymati(m.id)) +
+        (m.id === 'oqituvchi_avans' ? '<p class="jonli" data-jonli="oqituvchi" aria-live="polite"></p>' : '');
     }).join('');
     if (n === 12) {
       const avaz = MODDALAR.find(function (m) { return m.id === 'avaz_aka'; });
@@ -417,6 +418,19 @@ function jonliYangila(n) {
       return s + son(j[m.id]);
     }, 0);
     ilova.querySelector('[data-jonli="guruh"]').textContent = formatSom(jami);
+  }
+  if (n === 4) {
+    const h = hisobla(j);
+    const el = ilova.querySelector('[data-jonli="oqituvchi"]');
+    const mos = h.tushum > 0 && Math.abs(h.oqituvchiUlush - OQITUVCHI_FOIZI) <= OQITUVCHI_RUXSAT;
+    el.textContent = h.tushum > 0
+      ? 'Oʻqituvchi oylik + avans: ' + formatSom(h.oqituvchi) + ' (' + formatFoiz(h.oqituvchiUlush) + '). ' +
+        'Kerak: tushumning ' + OQITUVCHI_FOIZI + '% i = ' + formatSom(h.oqituvchiReja) + '.'
+      : 'Oʻqituvchilar ulushini hisoblash uchun 2–3-savollarni toʻldiring.';
+    // Summalar qator oxirida boʻlinib ketmasin
+    el.textContent = el.textContent.replace(/(\d) (?=\d)/g, '$1 ').replace(/ soʻm/g, ' soʻm');
+    el.classList.toggle('mos', mos);
+    el.classList.toggle('mos-emas', h.tushum > 0 && !mos && h.oqituvchi > 0);
   }
   if (ek.tur === 'soliq') {
     const farq = j.soliq_qolda && son(j.soliq) !== hisobla(j).soliqAvto;

@@ -37,7 +37,12 @@
   tekshir('A: marja', f1(a.marja), '31.6');
   tekshir('A: oshgan guruhlar', a.oshganlar.length, 0);
   tekshir('A: status', a.status, 'yashil');
-  tekshir('A: ogohlantirishlar', a.ogohlar.length, 0);
+  tekshir('A: oʻqituvchi ulushi', f1(a.oqituvchiUlush), '28.4');
+  tekshir('A: ogohlantirishlar (faqat 30% qoidasi)', a.ogohlar.join(' | '),
+    'Oʻqituvchi oylik va avansi tushumning 28.4% i. 30% boʻlishi kerak: 52 800 000 soʻm.');
+
+  const a30 = hisobla(Object.assign({}, A, { oqituvchi_oylik: 38800000, oqituvchi_avans: 14000000 }));
+  tekshir('Oʻqituvchi 30%: ogohlantirish yoʻq', a30.ogohlar.length, 0);
 
   const b = hisobla(B);
   tekshir('B: tushum', b.tushum, 154000000);
@@ -52,7 +57,7 @@
   tekshir('Tushum 0: status', c.status, 'qizil');
 
   const d = hisobla(Object.assign({}, A, { soliq_qolda: true, soliq: 5000000, mayda_qurilish: 1500000 }));
-  tekshir('Qoʻlda soliq + mayda qurilish: ogohlantirishlar', d.ogohlar.length, 2);
+  tekshir('Qoʻlda soliq + mayda qurilish: ogohlantirishlar', d.ogohlar.length, 3);
 
   const xatolar = natijalar.filter(function (n) { return !n.ok; });
   const qatorlar = natijalar.map(function (n) {
