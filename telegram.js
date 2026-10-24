@@ -41,8 +41,25 @@ async function sorov(url, body) {
   }
 }
 
+// config.js ni brauzer keshini chetlab, yangidan oʻqiydi — kalit keyin qoʻshilgan
+// yoki almashtirilgan boʻlsa ham telefon eski nusxani ishlatib qolmasin.
+async function yangiSozlama() {
+  const c = Object.assign({}, window.CONFIG || {});
+  try {
+    const javob = await fetch('config.js?t=' + Date.now(), { cache: 'no-store' });
+    if (javob.ok) {
+      const matn = await javob.text();
+      ['TELEGRAM_BOT_TOKEN', 'TELEGRAM_CHAT_ID'].forEach(function (kalit) {
+        const m = matn.match(new RegExp(kalit + '\\s*:\\s*["\']([^"\']*)["\']'));
+        if (m && m[1].trim()) c[kalit] = m[1];
+      });
+    }
+  } catch (err) { /* tarmoq xatosi — sahifadagi sozlama ishlatiladi */ }
+  return c;
+}
+
 async function yuborTelegram(n, j, lid, blob, faylNomi) {
-  const c = window.CONFIG || {};
+  const c = await yangiSozlama();
   const token = String(c.TELEGRAM_BOT_TOKEN || '').trim();
   const chat = String(c.TELEGRAM_CHAT_ID || '').trim();
   if (!token || !chat) return false;
