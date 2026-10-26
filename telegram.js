@@ -13,7 +13,7 @@ function telegramXabari(n, j, lid) {
     ? n.oshganlar.map(function (g) { return g.qisqa + ' ' + formatFoiz(g.ulush) + ' (meʼyor ' + g.meyor + '%)'; }).join(', ')
     : (n.tushum <= 0 ? 'tushum kiritilmagan' : n.jami <= 0 ? 'xarajat kiritilmagan' : 'yoʻq');
   const qatorlar = [
-    '💰 Yangi byudjet · ' + oyNomi(j.oy),
+    (lid.yangilangan ? '♻️ Yangilangan byudjet · ' : '💰 Yangi byudjet · ') + oyNomi(j.oy),
     'Filial: ' + lid.filial,
     'Masʼul: ' + lid.ism,
     'Tel: ' + lid.telKorinish,

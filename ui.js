@@ -1,7 +1,8 @@
 'use strict';
 
 /* =====================================================================
-   Ekranlar: Landing → 15 savol → Natija → Forma → Yakun.
+   Ekranlar: Landing → Filial maʼlumotlari → 15 savol → Natija.
+   Natija ochilishi bilan byudjet Moliya boʻlimiga avtomatik yuboriladi, PDF — tugma bilan.
    Hisob-kitob app.js da (hisobla), PDF — pdf.js, Telegram — telegram.js.
    ===================================================================== */
 
@@ -37,7 +38,10 @@ const holat = {
   saqlanganEkran: null,
   natija: null,
   pdf: null,
-  tg: null
+  tg: null,
+  tgSabab: '',
+  yuborilgan: null,       // { imzo, kod } — oxirgi yuborilgan byudjet (takror yubormaslik uchun)
+  formadanKeyin: null     // filial formasidan keyin qaysi ekranga oʻtish
 };
 
 let ilova;
@@ -138,10 +142,10 @@ function bugun() {
 
 function saqla() {
   try {
-    if (holat.ekran === 'yakun') {
-      localStorage.removeItem(SAQLASH_KALITI);
-    } else if (holat.ekran !== 'bosh') {
-      localStorage.setItem(SAQLASH_KALITI, JSON.stringify({ ekran: holat.ekran, javob: holat.javob, lid: holat.lid }));
+    if (holat.ekran !== 'bosh') {
+      localStorage.setItem(SAQLASH_KALITI, JSON.stringify({
+        ekran: holat.ekran, javob: holat.javob, lid: holat.lid, yuborilgan: holat.yuborilgan
+      }));
     }
   } catch (err) { /* xususiy rejimda saqlanmaydi — muhim emas */ }
 }
@@ -152,6 +156,7 @@ function yukla() {
     if (s && s.javob && s.ekran) {
       holat.javob = Object.assign(yangiJavob(), s.javob);
       holat.lid = Object.assign(holat.lid, s.lid || {});
+      holat.yuborilgan = s.yuborilgan || null;
       holat.saqlanganEkran = s.ekran;
     }
   } catch (err) { /* eʼtiborsiz */ }
@@ -166,12 +171,12 @@ function korsat(ekran, fokus) {
   if (ekran === 'bosh') html = boshSahifa();
   else if (typeof ekran === 'number') html = savolEkrani(ekran);
   else if (ekran === 'natija') html = natijaEkrani();
-  else if (ekran === 'forma') html = formaEkrani();
-  else html = yakunEkrani();
+  else html = formaEkrani();
   ilova.innerHTML = html;
   document.body.setAttribute('data-ekran', typeof ekran === 'number' ? 'savol' : ekran);
   if (typeof ekran === 'number') jonliYangila(ekran);
   if (ekran === 'forma') formaHolati(false);
+  if (ekran === 'natija') avtoYuborish();
   window.scrollTo(0, 0);
   if (fokus !== false) {
     const h = ilova.querySelector('h1');
@@ -183,8 +188,8 @@ function boshSahifa() {
   const muddat = window.CONFIG && String(window.CONFIG.MUDDAT || '').trim();
   const s = holat.saqlanganEkran;
   let davom = '';
-  if (s && s !== 'bosh' && s !== 'yakun') {
-    const qayer = typeof s === 'number' ? s + ' / ' + SAVOLLAR_SONI : 'natija';
+  if (s && s !== 'bosh') {
+    const qayer = typeof s === 'number' ? s + ' / ' + SAVOLLAR_SONI : s === 'forma' ? 'filial maʼlumotlari' : 'natija';
     davom = '<button type="button" class="tugma ikkinchi" data-amal="davom">Davom etish: ' + qayer + '</button>';
   }
   return '' +
@@ -324,7 +329,7 @@ function natijaEkrani() {
     : 'yoʻq';
   return '' +
     '<section class="ekran natija">' +
-      '<p class="ustki">' + e(oyNomi(holat.javob.oy)) + ' byudjeti</p>' +
+      '<p class="ustki">' + e(holat.lid.filial) + ' · ' + e(oyNomi(holat.javob.oy)) + ' byudjeti</p>' +
       '<h1 tabindex="-1">Natija</h1>' +
       '<div class="status status-' + n.status + '">' +
         '<p class="status-nom">' + st.nom + '</p>' +
@@ -339,12 +344,12 @@ function natijaEkrani() {
       (n.ogohlar.length
         ? '<ul class="ogohlar" aria-label="Ogohlantirishlar">' + n.ogohlar.map(function (o) { return '<li>' + e(o) + '</li>'; }).join('') + '</ul>'
         : '') +
+      '<div data-tg-blok>' + tgBlok() + '</div>' +
       '<p class="pdf-eslatma">Toʻliq taqsimot, tavsiyalar va imzo varagʻi — PDFda.</p>' +
-      '<p class="yuborilmagan"><strong>Byudjet hali Moliya boʻlimiga yuborilmagan.</strong> ' +
-        'Yuborish uchun quyidagi tugmani bosing va filial maʼlumotlarini kiriting.</p>' +
       '<div class="harakatlar">' +
-        '<button type="button" class="tugma asosiy" data-amal="formaga">Tasdiqlashga yuborish va PDF olish</button>' +
+        '<button type="button" class="tugma asosiy" data-amal="pdf" data-pdf-tugma disabled>PDF tayyorlanmoqda…</button>' +
         '<button type="button" class="tugma matnli" data-amal="tahrir">Javoblarni oʻzgartirish</button>' +
+        '<button type="button" class="tugma matnli" data-amal="yangi">Yangi byudjet tuzish</button>' +
       '</div>' +
     '</section>';
 }
@@ -361,8 +366,8 @@ function formaEkrani() {
   };
   return '' +
     '<form class="ekran forma" novalidate>' +
-      '<h1 tabindex="-1">Byudjetingiz tayyor.</h1>' +
-      '<p class="lead">Tasdiqlashga yuborish va PDF olish uchun maʼlumotlarni kiriting.</p>' +
+      '<h1 tabindex="-1">Avval filialingiz haqida</h1>' +
+      '<p class="lead">Soʻrovnoma tugashi bilan byudjet shu maʼlumotlar bilan Moliya boʻlimiga avtomatik yuboriladi.</p>' +
       '<div class="maydonlar">' +
         maydon('filial', 'Filial nomi',
           '<input id="l-filial" name="filial" type="text" autocomplete="organization" enterkeyhint="next" ' +
@@ -375,16 +380,17 @@ function formaEkrani() {
           'placeholder="90 123 45 67" value="' + e(telFormat(raqamlar(l.tel))) + '" aria-describedby="x-tel"></div>') +
       '</div>' +
       '<p class="xato" role="alert" hidden></p>' +
-      '<div class="harakatlar">' +
-        '<button type="submit" class="tugma asosiy" data-yuborish disabled>Tasdiqlashga yuborish va PDF olish</button>' +
-        '<button type="button" class="tugma matnli" data-amal="natijaga">Orqaga</button>' +
+      '<div class="pastki">' +
+        '<button type="button" class="tugma ikkinchi" data-amal="formadan-orqaga">Orqaga</button>' +
+        '<button type="submit" class="tugma asosiy" data-yuborish disabled>' +
+          (holat.formadanKeyin === 'natija' ? 'Natijani koʻrish' : 'Keyingisi') + '</button>' +
       '</div>' +
     '</form>';
 }
 
 function tgMatni() {
   if (holat.tg === 'ok') return 'Byudjet Moliya boʻlimiga yuborildi.';
-  if (holat.tg === 'xato') return 'PDF yuklandi. Moliya boʻlimiga yuborilmadi — faylni guruhga oʻzingiz tashlang.';
+  if (holat.tg === 'xato') return 'Moliya boʻlimiga yuborilmadi. «Qayta yuborish»ni bosing yoki PDFni guruhga oʻzingiz tashlang.';
   return 'Moliya boʻlimiga yuborilmoqda…';
 }
 
@@ -393,24 +399,9 @@ function tgBlok() {
     '<div class="tg tg-' + (holat.tg || 'kutish') + '" role="status" aria-live="polite">' +
       '<p>' + tgMatni() + '</p>' +
       (holat.tg === 'xato' && holat.tgSabab ? '<p class="tg-sabab">Sabab: ' + e(holat.tgSabab) + '</p>' : '') +
+      (holat.tg === 'ok' && holat.lid.kod ? '<p class="tg-sabab">Byudjet kodi: <strong>' + e(holat.lid.kod) + '</strong></p>' : '') +
     '</div>' +
     (holat.tg === 'xato' ? '<button type="button" class="tugma ikkinchi tg-qayta" data-amal="qayta-yuborish">Qayta yuborish</button>' : '');
-}
-
-function yakunEkrani() {
-  const p = holat.pdf;
-  return '' +
-    '<section class="ekran yakun">' +
-      '<h1 tabindex="-1">PDF yuklandi</h1>' +
-      '<p class="lead">' + e(p.nom) + '</p>' +
-      '<div data-tg-blok>' + tgBlok() + '</div>' +
-      '<p class="kod">Byudjet kodi: <strong>' + e(holat.lid.kod) + '</strong></p>' +
-      '<div class="harakatlar">' +
-        '<a class="tugma ikkinchi" href="' + p.url + '" download="' + e(p.nom) + '">PDFni qayta yuklash</a>' +
-        '<a class="tugma matnli" href="' + p.url + '" target="_blank" rel="noopener">Yuklanmadimi? PDFni yangi oynada oching</a>' +
-        '<button type="button" class="tugma matnli" data-amal="yangi">Yangi byudjet tuzish</button>' +
-      '</div>' +
-    '</section>';
 }
 
 /* ---------- Jonli yangilanishlar ---------- */
@@ -477,7 +468,19 @@ function keyingi(n) {
     if (f) f.focus();
     return;
   }
-  korsat(n < SAVOLLAR_SONI ? n + 1 : 'natija');
+  if (n < SAVOLLAR_SONI) {
+    korsat(n + 1);
+  } else if (lidTogrimi()) {
+    korsat('natija');
+  } else {
+    holat.formadanKeyin = 'natija';
+    korsat('forma');
+  }
+}
+
+function lidTogrimi() {
+  const x = lidXatolari();
+  return !(x.filial || x.ism || x.tel);
 }
 
 // rejim: true — hamma xatoni koʻrsatish; 'filial' va h.k. — shu maydonni (chiqib ketganda);
@@ -498,53 +501,83 @@ function formaHolati(rejim, maydon) {
   ilova.querySelector('[data-yuborish]').disabled = !!(x.filial || x.ism || x.tel);
 }
 
-/* ---------- Yuborish: avval PDF, keyin Telegram ---------- */
+/* ---------- Filial maʼlumotlari ---------- */
 
-async function yuborish() {
-  const x = lidXatolari();
-  if (x.filial || x.ism || x.tel) { formaHolati(true); return; }
-  const tugma = ilova.querySelector('[data-yuborish]');
-  tugma.disabled = true;
-  tugma.textContent = 'PDF tayyorlanmoqda…';
-  xatoKorsat('');
-
-  const j = holat.javob;
+function filialniSaqla() {
+  if (!lidTogrimi()) { formaHolati(true); return; }
   const l = holat.lid;
   l.filial = l.filial.trim().replace(/\s+/g, ' ');
   l.ism = l.ism.trim().replace(/\s+/g, ' ');
+  const keyin = holat.formadanKeyin || 1;
+  holat.formadanKeyin = null;
+  korsat(keyin);
+}
+
+/* ---------- Natija ochilganda: PDF tayyorlash va Telegramʼga avtomatik yuborish ---------- */
+
+// Bir xil byudjet qayta-qayta yuborilmasligi uchun javoblar va filial maʼlumotlaridan imzo.
+function byudjetImzosi() {
+  const l = holat.lid;
+  return JSON.stringify([holat.javob, l.filial, l.ism, raqamlar(l.tel)]);
+}
+
+let pdfNavbati = 0;
+
+async function avtoYuborish() {
+  const j = holat.javob;
+  const l = holat.lid;
+  const navbat = ++pdfNavbati;
   l.telKorinish = '+998 ' + telFormat(raqamlar(l.tel));
   if (!l.kod || l.kodOy !== j.oy) { l.kod = byudjetKodi(j.oy); l.kodOy = j.oy; }
   l.sana = bugun();
-  const natija = holat.natija = hisobla(j);
 
-  let blob;
-  const nom = pdfFaylNomi(l.filial, j.oy);
+  const imzo = byudjetImzosi();
+  const avvalYuborilgan = !!holat.yuborilgan && holat.yuborilgan.kod === l.kod;
+  const allaqachon = avvalYuborilgan && holat.yuborilgan.imzo === imzo;
+  l.yangilangan = avvalYuborilgan && !allaqachon;
+
+  holat.tgSabab = '';
+  holat.tg = allaqachon ? 'ok' : 'kutish';
+  tgYangila();
+
   try {
-    blob = await yaratPDF(natija, j, l);
+    const blob = await yaratPDF(holat.natija, j, l);
+    if (navbat !== pdfNavbati) return;            // bu orada boshqa ekranga oʻtilgan
+    if (holat.pdf && holat.pdf.url) URL.revokeObjectURL(holat.pdf.url);
+    holat.pdf = { blob: blob, nom: pdfFaylNomi(l.filial, j.oy), url: URL.createObjectURL(blob) };
+    pdfTugmasi('PDF yuklab olish', false);
   } catch (err) {
     console.error(err);
-    tugma.disabled = false;
-    tugma.textContent = 'Tasdiqlashga yuborish va PDF olish';
-    xatoKorsat('PDF yaratib boʻlmadi. Internetni tekshirib, qayta urinib koʻring.');
+    if (navbat !== pdfNavbati) return;
+    holat.pdf = null;
+    pdfTugmasi('PDF tayyorlanmadi', true);
+    holat.tg = 'xato';
+    holat.tgSabab = 'PDF yaratib boʻlmadi — sahifani yangilab, qayta urinib koʻring.';
+    tgYangila();
     return;
   }
 
-  if (holat.pdf && holat.pdf.url) URL.revokeObjectURL(holat.pdf.url);
-  holat.pdf = { blob: blob, nom: nom, url: URL.createObjectURL(blob) };
-  pdfniYukla(holat.pdf);
-
-  korsat('yakun');
-  telegramgaYubor();
+  if (!allaqachon) telegramgaYubor(imzo);
 }
 
-async function telegramgaYubor() {
-  const yangila = function () {
-    const blok = ilova.querySelector('[data-tg-blok]');
-    if (blok) blok.innerHTML = tgBlok();
-  };
+function pdfTugmasi(matn, yopiq) {
+  const t = ilova.querySelector('[data-pdf-tugma]');
+  if (!t) return;
+  t.textContent = matn;
+  t.disabled = yopiq;
+}
+
+function tgYangila() {
+  const blok = ilova.querySelector('[data-tg-blok]');
+  if (blok) blok.innerHTML = tgBlok();
+}
+
+async function telegramgaYubor(imzo) {
+  if (!holat.pdf) { avtoYuborish(); return; }
+  imzo = imzo || byudjetImzosi();
   holat.tg = 'kutish';
   holat.tgSabab = '';
-  yangila();
+  tgYangila();
   let natija;
   try {
     natija = await yuborTelegram(holat.natija, holat.javob, holat.lid, holat.pdf.blob, holat.pdf.nom);
@@ -554,7 +587,11 @@ async function telegramgaYubor() {
   }
   holat.tg = natija && natija.ok ? 'ok' : 'xato';
   holat.tgSabab = natija && natija.sabab;
-  yangila();
+  if (holat.tg === 'ok') {
+    holat.yuborilgan = { imzo: imzo, kod: holat.lid.kod };
+    saqla();
+  }
+  tgYangila();
 }
 
 function pdfniYukla(p) {
@@ -580,11 +617,18 @@ function hodisalarniUla() {
     if (amal === 'boshlash') {
       holat.javob = yangiJavob();
       holat.saqlanganEkran = null;
-      korsat(1);
+      holat.yuborilgan = null;
+      holat.lid.kod = '';
+      holat.formadanKeyin = null;
+      korsat('forma');
     } else if (amal === 'davom') {
-      korsat(holat.saqlanganEkran === 'forma' ? 'natija' : holat.saqlanganEkran);
+      korsat(holat.saqlanganEkran);
+    } else if (amal === 'formadan-orqaga') {
+      const qayt = holat.formadanKeyin === 'natija' ? SAVOLLAR_SONI : 'bosh';
+      holat.formadanKeyin = null;
+      korsat(qayt);
     } else if (amal === 'orqaga') {
-      korsat(n > 1 ? n - 1 : 'bosh');
+      korsat(n > 1 ? n - 1 : 'forma');
     } else if (amal === 'yoq') {
       moddalarEkrani(n).forEach(function (m) { holat.javob[m.id] = 0; });
       korsat(n + 1);
@@ -593,18 +637,17 @@ function hodisalarniUla() {
       delete holat.javob.soliq;
       korsat(5, false);
       ilova.querySelector('#m-soliq').focus();
-    } else if (amal === 'formaga') {
-      korsat('forma');
+    } else if (amal === 'pdf') {
+      if (holat.pdf) pdfniYukla(holat.pdf);
     } else if (amal === 'tahrir') {
       korsat(SAVOLLAR_SONI);
-    } else if (amal === 'natijaga') {
-      korsat('natija');
     } else if (amal === 'qayta-yuborish') {
       telegramgaYubor();
     } else if (amal === 'yangi') {
       holat.javob = yangiJavob();
       holat.saqlanganEkran = null;
       holat.tg = null;
+      holat.yuborilgan = null;
       holat.lid.kod = '';
       korsat('bosh');
     }
@@ -689,7 +732,7 @@ function hodisalarniUla() {
     ev.preventDefault();
     const form = ev.target;
     if (form.classList.contains('savol')) keyingi(Number(form.getAttribute('data-n')));
-    else if (form.classList.contains('forma')) yuborish();
+    else if (form.classList.contains('forma')) filialniSaqla();
   });
 }
 

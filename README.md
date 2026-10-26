@@ -2,6 +2,8 @@
 
 Filial rahbari 15 ta qisqa savolga javob beradi, sayt keyingi oy byudjetini hisoblaydi, meʼyorlarga solishtiradi va imzolanadigan PDF beradi. Shu PDF va qisqa xabar Moliya boʻlimining Telegram guruhiga avtomatik tushadi.
 
+Tartib: **Filial maʼlumotlari → 15 savol → Natija**. Natija ekrani ochilishi bilan byudjet (xabar + PDF) Moliya boʻlimi guruhiga **avtomatik** yuboriladi. Filial rahbari PDFni xohlasa “PDF yuklab olish” tugmasi bilan oladi. Javoblar oʻzgartirilsa, guruhga “♻️ Yangilangan byudjet” boʻlib qayta ketadi; oʻzgarmagan byudjet takror yuborilmaydi.
+
 Sayt toʻliq brauzerda ishlaydi: server, baza, oylik toʻlov kerak emas.
 
 ---
