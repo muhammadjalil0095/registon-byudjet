@@ -12,14 +12,19 @@ function telegramXabari(n, j, lid) {
   const diqqat = n.status !== 'yashil' && n.oshganlar.length
     ? n.oshganlar.map(function (g) { return g.qisqa + ' ' + formatFoiz(g.ulush) + ' (meʼyor ' + g.meyor + '%)'; }).join(', ')
     : (n.tushum <= 0 ? 'tushum kiritilmagan' : n.jami <= 0 ? 'xarajat kiritilmagan' : 'yoʻq');
+  const ajratgich = '____________________________________';
   const qatorlar = [
     (lid.yangilangan ? '♻️ Yangilangan byudjet · ' : '💰 Yangi byudjet · ') + oyNomi(j.oy),
+    ajratgich,
     'Filial: ' + lid.filial,
     'Masʼul: ' + lid.ism,
     'Tel: ' + lid.telKorinish,
-    'Tushum: ' + formatSon(n.tushum),
-    'Xarajat: ' + formatSon(n.jami),
-    'Foyda: ' + formatSon(n.foyda) + ' (' + formatFoiz(n.marja) + ')',
+    ajratgich,
+    '',
+    '🟢 Tushum: ' + formatSon(n.tushum),
+    '🔴 Xarajat: ' + formatSon(n.jami),
+    '💵 Foyda: ' + formatSon(n.foyda) + ' (' + formatFoiz(n.marja) + ')',
+    ajratgich,
     'Status: ' + st.belgi + ' ' + st.nom,
     'Diqqat: ' + diqqat
   ];
