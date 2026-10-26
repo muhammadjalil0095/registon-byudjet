@@ -50,7 +50,7 @@ let ilova;
 
 function yangiJavob() {
   const d = new Date();
-  return { oy: oyKodi(d.getFullYear(), d.getMonth() + 1), markaziy: 'yoq' };
+  return { oy: oyKodi(d.getFullYear(), d.getMonth() + 1) };
 }
 
 function oyVariantlari() {
@@ -270,19 +270,10 @@ function savolEkrani(n) {
     tana = summaMaydoni({ id: ek.id, nom: ek.yorliq, birlik: ek.birlik }, inputQiymati(ek.id));
     if (ek.tushum) tana += '<p class="jonli" data-jonli="tushum" aria-live="polite"></p>';
   } else if (ek.tur === 'guruh') {
-    tana = moddalarEkrani(n).filter(function (m) { return !m.shart; }).map(function (m) {
+    tana = moddalarEkrani(n).map(function (m) {
       return summaMaydoni(m, inputQiymati(m.id)) +
         (m.id === 'oqituvchi_avans' ? '<p class="jonli" data-jonli="oqituvchi" aria-live="polite"></p>' : '');
     }).join('');
-    if (n === 12) {
-      const avaz = MODDALAR.find(function (m) { return m.id === 'avaz_aka'; });
-      tana += '' +
-        '<div class="savolcha">' +
-          '<p class="savolcha-matn" id="markaziy-savol">Filialingiz Chilonzor, Yakkasaroy yoki Shirinmi?</p>' +
-          tanlovGuruhi('markaziy', TANLOVLAR.hayoq, j.markaziy, 'markaziy-savol') +
-        '</div>' +
-        summaMaydoni(avaz, inputQiymati('avaz_aka'), j.markaziy !== 'ha');
-    }
     tana += '<p class="guruh-jami">Guruh jami: <strong data-jonli="guruh">0 soʻm</strong></p>';
   } else if (ek.tur === 'tanlov') {
     tana = tanlovGuruhi(ek.id, TANLOVLAR[ek.variantlar], j[ek.id], 'sarlavha');
@@ -404,10 +395,7 @@ function jonliYangila(n) {
       ' = ' + formatSom(son(j.oquvchilar) * son(j.tolov));
   }
   if (ek.tur === 'guruh') {
-    const jami = moddalarEkrani(n).reduce(function (s, m) {
-      if (m.shart && j.markaziy !== 'ha') return s;
-      return s + son(j[m.id]);
-    }, 0);
+    const jami = moddalarEkrani(n).reduce(function (s, m) { return s + son(j[m.id]); }, 0);
     ilova.querySelector('[data-jonli="guruh"]').textContent = formatSom(jami);
   }
   if (n === 4) {
@@ -670,16 +658,9 @@ function hodisalarniUla() {
     const t = ev.target;
     const form = t.closest('form.savol');
     if (!form) return;
-    const n = Number(form.getAttribute('data-n'));
     if (t.type === 'radio' || t.tagName === 'SELECT') {
       holat.javob[t.name] = t.value;
       xatoKorsat('');
-      if (t.name === 'markaziy') {
-        const blok = ilova.querySelector('[data-maydon="avaz_aka"]');
-        blok.hidden = t.value !== 'ha';
-        if (t.value !== 'ha') delete holat.javob.avaz_aka;
-        jonliYangila(n);
-      }
       if (t.name === 'katta_xarajat') {
         const blok = ilova.querySelector('[data-maydon="katta_izoh"]');
         blok.hidden = t.value !== 'ha';

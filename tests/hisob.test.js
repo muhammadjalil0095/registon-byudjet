@@ -15,7 +15,7 @@
     konstovar: 2000000, xojalik: 1200000, kuler: 400000, ovqat: 1500000, dori: 100000,
     reklama: 7000000, media: 2000000, tadbirlar: 1500000,
     mayda_qurilish: 800000, qayta_tamir: 0,
-    yolkira: 300000, qaytarish: 2000000, markaziy_qomita: 0, markaziy: 'yoq',
+    yolkira: 300000, qaytarish: 2000000, markaziy_qomita: 0,
     maqsad: 'barqaror', ozgarish: 'teng', katta_xarajat: 'yoq'
   };
   const B = Object.assign({}, A, { oquvchilar: 280, reklama: 20000000, tadbirlar: 6000000, qayta_tamir: 15000000 });

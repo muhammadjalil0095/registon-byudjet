@@ -87,8 +87,7 @@ const MODDALAR = [
 
   { id: 'yolkira', nom: 'Yoʻlkira', izoh: 'Pochta, safar xizmati', guruh: 'boshqa', ekran: 12 },
   { id: 'qaytarish', nom: 'Talaba pulini qaytarish', izoh: 'Shartnoma bekor qilinishi kutilayotgan summa', guruh: 'boshqa', ekran: 12 },
-  { id: 'markaziy_qomita', nom: 'Markaziy qoʻmita uchun', guruh: 'boshqa', ekran: 12 },
-  { id: 'avaz_aka', nom: 'Avaz aka', guruh: 'boshqa', ekran: 12, shart: 'markaziy' }
+  { id: 'markaziy_qomita', nom: 'Markaziy qoʻmita uchun', guruh: 'boshqa', ekran: 12 }
 ];
 
 const ISH_HAQI_FOND = ['menejer_oylik', 'menejer_avans', 'oqituvchi_oylik', 'oqituvchi_avans', 'farrosh', 'support'];
@@ -171,7 +170,6 @@ function hisobla(j) {
 
   const summa = {};
   MODDALAR.forEach(function (m) { summa[m.id] = son(j[m.id]); });
-  if (j.markaziy !== 'ha') summa.avaz_aka = 0;
 
   // Ijtimoiy soliqni filial rasmiy xodimlar soniga qarab oʻzi kiritadi.
   const fond = ISH_HAQI_FOND.reduce(function (s, id) { return s + summa[id]; }, 0);
@@ -185,7 +183,6 @@ function hisobla(j) {
   const marja = ulush(foyda);
 
   const moddalar = MODDALAR
-    .filter(function (m) { return !m.shart || j.markaziy === 'ha'; })
     .map(function (m) {
       return { id: m.id, nom: m.nom, guruh: m.guruh, summa: summa[m.id], ulush: ulush(summa[m.id]) };
     });

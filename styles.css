@@ -374,14 +374,8 @@ select:focus { outline: none; border-color: var(--brend); }
   text-align: center;
 }
 
-.savolcha {
-  padding: 14px 0;
-  border-top: 1px solid var(--chiziq);
-}
-.savolcha-matn { font-weight: 600; }
 
 .variantlar { display: grid; gap: 8px; margin-top: 8px; }
-.savolcha .variantlar { grid-template-columns: 1fr 1fr; }
 .variant { position: relative; display: block; cursor: pointer; }
 .variant input {
   position: absolute;
