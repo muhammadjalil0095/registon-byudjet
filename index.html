@@ -8,7 +8,12 @@
 <title>Filial byudjeti — Registon</title>
 <link rel="icon" type="image/png" href="assets/logo.png">
 <link rel="preload" href="fonts/Montserrat-ExtraBold.ttf" as="font" type="font/ttf" crossorigin>
-<link rel="stylesheet" href="styles.css">
+<script>
+  // Sayt fayllari har ochilishda serverdan yangidan olinadi — telefon eski nusxani eslab qolmasin.
+  window.SAYT_V = Date.now();
+  document.write('<link rel="stylesheet" href="styles.css?v=' + window.SAYT_V + '">');
+</script>
+<noscript><link rel="stylesheet" href="styles.css"></noscript>
 </head>
 <body>
 <a class="otish" href="#ilova">Asosiy qismga oʻtish</a>
@@ -18,11 +23,11 @@
 <main id="ilova" tabindex="-1">
   <noscript><p class="izoh">Sayt ishlashi uchun brauzerda JavaScript yoqilgan boʻlishi kerak.</p></noscript>
 </main>
-<script src="config.js"></script>
 <script src="vendor/jspdf.umd.min.js"></script>
-<script src="app.js"></script>
-<script src="ui.js"></script>
-<script src="pdf.js"></script>
-<script src="telegram.js"></script>
+<script>
+  ['config.js', 'app.js', 'ui.js', 'pdf.js', 'telegram.js'].forEach(function (f) {
+    document.write('<script src="' + f + '?v=' + window.SAYT_V + '"><\/script>');
+  });
+</script>
 </body>
 </html>
