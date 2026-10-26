@@ -9,12 +9,10 @@ const TELEGRAM_TIMEOUT = 10000;
 
 function telegramXabari(n, j, lid) {
   const st = STATUSLAR[n.status];
-  const diqqat = n.status !== 'yashil' && n.oshganlar.length
-    ? n.oshganlar.map(function (g) { return g.qisqa + ' ' + formatFoiz(g.ulush) + ' (meʼyor ' + g.meyor + '%)'; }).join(', ')
-    : (n.tushum <= 0 ? 'tushum kiritilmagan' : n.jami <= 0 ? 'xarajat kiritilmagan' : 'yoʻq');
   const ajratgich = '____________________________________';
+  // Status birinchi qatorda — guruhdagi bildirishnomada darhol koʻrinadi
   const qatorlar = [
-    (lid.yangilangan ? '♻️ Yangilangan byudjet · ' : '💰 Yangi byudjet · ') + oyNomi(j.oy),
+    (lid.yangilangan ? '♻️ Yangilangan byudjet' : '💰 Yangi byudjet') + ' · ' + st.belgi + ' ' + st.nom + ' · ' + oyNomi(j.oy),
     ajratgich,
     'Filial: ' + lid.filial,
     'Masʼul: ' + lid.ism,
@@ -24,10 +22,20 @@ function telegramXabari(n, j, lid) {
     '🟢 Tushum: ' + formatSon(n.tushum),
     '🔴 Xarajat: ' + formatSon(n.jami),
     '💵 Foyda: ' + formatSon(n.foyda) + ' (' + formatFoiz(n.marja) + ')',
-    ajratgich,
-    'Status: ' + st.belgi + ' ' + st.nom,
-    'Diqqat: ' + diqqat
+    ajratgich
   ];
+  if (n.tushum <= 0) {
+    qatorlar.push('Diqqat: tushum kiritilmagan');
+  } else if (n.jami <= 0) {
+    qatorlar.push('Diqqat: xarajat kiritilmagan');
+  } else if (n.amallar.length) {
+    qatorlar.push('Meʼyordan oshgan:');
+    n.amallar.forEach(function (g) {
+      qatorlar.push('• ' + g.qisqa + ' ' + formatFoiz(g.ulush) + ' (meʼyor ' + g.meyor + '%) — +' + formatSon(g.ortiqcha));
+    });
+  } else {
+    qatorlar.push('Meʼyordan oshgan: yoʻq');
+  }
   n.ogohlar.forEach(function (o) { qatorlar.push('⚠️ ' + o); });
   const izoh = j.katta_xarajat === 'ha' ? String(j.katta_izoh || '').trim() : '';
   if (izoh) qatorlar.push('Katta xarajat: ' + izoh);

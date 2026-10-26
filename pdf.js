@@ -15,7 +15,15 @@ const PDF_RANG = {
   qizil: [198, 40, 40],
   yashilOch: [232, 244, 236],
   sariqOch: [251, 243, 224],
-  qizilOch: [251, 233, 233]
+  qizilOch: [251, 233, 233],
+  yashilToq: [20, 92, 41],
+  sariqToq: [107, 74, 0],
+  qizilToq: [142, 31, 31],
+  trek: [241, 236, 232],
+  neytral: [207, 198, 191],
+  zonaQizil: [240, 180, 180],
+  zonaSariq: [240, 213, 144],
+  zonaYashil: [180, 220, 192]
 };
 
 let pdfResurs = null;
@@ -96,6 +104,17 @@ async function yaratPDF(n, j, lid) {
     matn(t, M, y);
     y += 6;
   }
+  // Qator balandligi (mm) — shrift oʻlchamiga qarab
+  function qator(olcham) {
+    return olcham * 0.3528 * 1.3;
+  }
+  // Matnni kenglikka sigʻdirib yozadi va keyingi qatorning y sini qaytaradi
+  function yoz(text, x, yy, kenglik, tur, olcham, rang) {
+    shrift(tur, olcham, rang);
+    const q = doc.splitTextToSize(String(text), kenglik);
+    matn(q, x, yy);
+    return yy + q.length * qator(olcham);
+  }
   function nuqta(x, yy, rang, radius) {
     doc.setFillColor.apply(doc, rang);
     doc.circle(x, yy, radius || 1.4, 'F');
@@ -116,131 +135,216 @@ async function yaratPDF(n, j, lid) {
   matn('Filial byudjeti — ' + oyMatni, M, y);
   y += 9;
 
-  // Maʼlumotlar bloki (3 ustun × 2 qator)
-  const malumot = [
-    ['Filial', lid.filial], ['Masʼul', lid.ism], ['Telefon', lid.telKorinish],
-    ['Byudjet oyi', oyMatni], ['Tuzilgan sana', lid.sana], ['Byudjet kodi', lid.kod]
-  ];
-  const ustunEni = ICHKI / 3;
-  for (let q = 0; q < 2; q++) {
-    let qatorBalandligi = 0;
-    for (let u = 0; u < 3; u++) {
-      const el = malumot[q * 3 + u];
-      const x = M + u * ustunEni;
-      shrift('regular', 8, PDF_RANG.ikkinchi);
-      matn(el[0], x, y);
-      shrift('semi', 10);
-      const qatorlar = doc.splitTextToSize(String(el[1]), ustunEni - 4);
-      matn(qatorlar, x, y + 5);
-      qatorBalandligi = Math.max(qatorBalandligi, 5 + qatorlar.length * 4.6);
-    }
-    y += qatorBalandligi + 3;
-  }
-  y += 2;
+  // Kim va qachon tuzdi — bitta qatorda (byudjet kodi shapkada)
+  y = yoz('Filial: ' + lid.filial + ' · Masʼul: ' + lid.ism + ' · Tel: ' + lid.telKorinish + ' · Tuzilgan: ' + lid.sana,
+    M, y, ICHKI, 'regular', 9, PDF_RANG.ikkinchi) + 3;
 
-  // Xulosa bloki
-  const blokY = y;
-  const blokH = 30;
-  doc.setFillColor.apply(doc, stOch);
-  doc.rect(M, blokY, ICHKI, blokH, 'F');
-  doc.setFillColor.apply(doc, stRang);
-  doc.rect(M, blokY, 2.2, blokH, 'F');
-  shrift('xb', 13, stRang);
-  matn(STATUSLAR[n.status].nom, M + 7, blokY + 8);
-  const nomEni = doc.getTextWidth(STATUSLAR[n.status].nom);
+  // Xulosa bloki: status, 4 koʻrsatkich, marja shkalasi va keyingi qadam
+  const shkalaBor = n.marja !== null && n.jami > 0;
+  const x0 = M + 7;
+  const wI = ICHKI - 11;
+  const stNom = STATUSLAR[n.status].nom;
+  shrift('xb', 13);
+  const nomEni = doc.getTextWidth(stNom);
   shrift('semi', 10.5);
-  matn(doc.splitTextToSize(n.xulosa, ICHKI - nomEni - 16)[0], M + 7 + nomEni + 4, blokY + 8);
+  const xulosaYonida = nomEni + 4 + doc.getTextWidth(n.xulosa) <= wI;
+  const xulosaQ = xulosaYonida ? [n.xulosa] : doc.splitTextToSize(n.xulosa, wI);
+  shrift('semi', 9.5);
+  const qadamQ = doc.splitTextToSize(keyingiQadamMatni(n), wI);
+  shrift('regular', 8.5);
+  const qoidaQ = n.status !== 'yashil' ? doc.splitTextToSize(yashilQoidasi(), wI) : [];
+
+  // Joylashuv blok tepasidan (mm)
+  const yNom = 8.5;
+  const yXulosa = xulosaYonida ? yNom : yNom + 6;
+  const yKYorliq = yXulosa + (xulosaQ.length - 1) * qator(10.5) + 8;
+  const yKQiymat = yKYorliq + 6;
+  const yZona = yKQiymat + 5;
+  const yZonaRaqam = yZona + 3 + 3.6;
+  const yQadam = shkalaBor ? yZonaRaqam + 6.5 : yKQiymat + 7.5;
+  const yQoida = yQadam + qadamQ.length * qator(9.5);
+  const blokH = (qoidaQ.length ? yQoida + (qoidaQ.length - 1) * qator(8.5) : yQadam + (qadamQ.length - 1) * qator(9.5)) + 5;
+
+  const bY = y;
+  doc.setFillColor.apply(doc, stOch);
+  doc.rect(M, bY, ICHKI, blokH, 'F');
+  doc.setFillColor.apply(doc, stRang);
+  doc.rect(M, bY, 2.2, blokH, 'F');
+  shrift('xb', 13, stRang);
+  matn(stNom, x0, bY + yNom);
+  shrift('semi', 10.5);
+  matn(xulosaQ, xulosaYonida ? x0 + nomEni + 4 : x0, bY + yXulosa);
 
   const korsatkichlar = [
-    ['Reja tushum', formatSon(n.tushum)],
-    ['Jami xarajat', formatSon(n.jami)],
-    ['Foyda', formatSon(n.foyda)],
+    ['Reja tushum, soʻm', formatMln(n.tushum)],
+    ['Jami xarajat, soʻm', formatMln(n.jami)],
+    ['Foyda, soʻm', formatMln(n.foyda)],
     ['Marja', formatFoiz(n.marja)]
   ];
-  const kEni = (ICHKI - 7) / 4;
+  const kEni = wI / 4;
   korsatkichlar.forEach(function (k, i) {
-    const x = M + 7 + i * kEni;
+    const x = x0 + i * kEni;
     shrift('regular', 8, PDF_RANG.ikkinchi);
-    matn(k[0] + (i < 3 ? ', soʻm' : ''), x, blokY + 16.5);
+    matn(k[0], x, bY + yKYorliq);
     shrift('xb', 12.5);
-    matn(k[1], x, blokY + 23.5);
+    matn(k[1], x, bY + yKQiymat);
   });
-  y = blokY + blokH + 9;
 
-  // Guruhlar jadvali
-  bolimSarlavha('Xarajat guruhlari');
-  const X = { summa: M + 100, ulush: M + 120, meyor: M + 138, holat: M + 144 };
-  shrift('semi', 8, PDF_RANG.ikkinchi);
-  matn('Guruh', M, y);
-  matn('Summa, soʻm', X.summa, y, { align: 'right' });
-  matn('Ulush', X.ulush, y, { align: 'right' });
-  matn('Meʼyor', X.meyor, y, { align: 'right' });
-  matn('Holat', X.holat, y);
-  y += 2;
-  chiziq(M, y, W - M, PDF_RANG.matn, 0.3);
-  y += 5;
-
-  n.guruhlar.forEach(function (g) {
-    const rang = g.oshgan ? PDF_RANG.qizil : PDF_RANG.matn;
-    shrift('regular', 9.5);
-    matn(g.nom, M, y);
-    shrift(g.oshgan ? 'semi' : 'regular', 9.5, rang);
-    matn(formatSon(g.summa), X.summa, y, { align: 'right' });
-    matn(formatFoiz(g.ulush), X.ulush, y, { align: 'right' });
-    shrift('regular', 9.5, PDF_RANG.ikkinchi);
-    matn(g.meyor === null ? '—' : g.meyor + '%', X.meyor, y, { align: 'right' });
-    if (g.meyor === null) {
-      shrift('regular', 9, PDF_RANG.ikkinchi);
-      matn('Meʼyor yoʻq', X.holat, y);
-    } else if (g.oshgan) {
-      nuqta(X.holat + 1.4, y - 1.2, PDF_RANG.qizil);
-      shrift('semi', 9, PDF_RANG.qizil);
-      matn('Oshgan +' + g.farq.toFixed(1) + ' p.', X.holat + 4.5, y);
-    } else {
-      nuqta(X.holat + 1.4, y - 1.2, n.tushum > 0 ? PDF_RANG.yashil : PDF_RANG.chiziq);
-      shrift('regular', 9, PDF_RANG.matn);
-      matn(n.tushum > 0 ? 'Meʼyorda' : '—', X.holat + 4.5, y);
-    }
-    y += 2.2;
-    chiziq(M, y, W - M);
-    y += 3.9;
-  });
+  if (shkalaBor) {
+    const MAKS = 40;
+    const qz = STATUS_CHEGARA.qizil;
+    const ys = STATUS_CHEGARA.yashil;
+    const oraliq = 0.6;
+    const birlik = (wI - 2 * oraliq) / MAKS;
+    [[0, qz, PDF_RANG.zonaQizil], [qz, ys, PDF_RANG.zonaSariq], [ys, MAKS, PDF_RANG.zonaYashil]].forEach(function (z, i) {
+      doc.setFillColor.apply(doc, z[2]);
+      doc.rect(x0 + z[0] * birlik + i * oraliq, bY + yZona, (z[1] - z[0]) * birlik, 3, 'F');
+    });
+    const m = Math.max(0, Math.min(MAKS, n.marja));
+    const bx = x0 + m * birlik + (m >= ys ? 2 : m >= qz ? 1 : 0) * oraliq;
+    doc.setFillColor(255, 255, 255);
+    doc.rect(bx - 1.1, bY + yZona - 1.6, 2.2, 6.2, 'F');
+    doc.setFillColor.apply(doc, PDF_RANG.matn);
+    doc.rect(bx - 0.6, bY + yZona - 1.1, 1.2, 5.2, 'F');
+    shrift('regular', 7.5, PDF_RANG.ikkinchi);
+    const ry = bY + yZonaRaqam;
+    matn('0', x0, ry);
+    matn(qz + '% — sariq', x0 + qz * birlik + oraliq, ry, { align: 'center' });
+    matn(ys + '% — yashil', x0 + ys * birlik + 2 * oraliq, ry, { align: 'center' });
+    matn(MAKS + '%', x0 + wI, ry, { align: 'right' });
+  }
   shrift('semi', 9.5);
-  matn('Jami xarajat', M, y);
-  matn(formatSon(n.jami), X.summa, y, { align: 'right' });
-  matn(formatFoiz(n.tushum > 0 ? n.jami / n.tushum * 100 : null), X.ulush, y, { align: 'right' });
-  y += 8.5;
+  matn(qadamQ, x0, bY + yQadam);
+  if (qoidaQ.length) {
+    shrift('regular', 8.5, PDF_RANG.ikkinchi);
+    matn(qoidaQ, x0, bY + yQoida);
+  }
+  y = bY + blokH + 9;
 
-  // Ogohlantirishlar
+  // Ikki ustun: chapda guruhlar meʼyorga nisbatan, oʻngda nima qilish kerak
+  const wL = 86;
+  const xR = M + wL + 8;
+  const wR = W - M - xR;
+  let yL = y;
+  let yR = y;
+
+  shrift('xb', 11);
+  matn('Guruhlar meʼyorga nisbatan', M, yL);
+  if (shkalaBor) {
+    shrift('regular', 7.5, PDF_RANG.ikkinchi);
+    matn('meʼyor', M + wL, yL, { align: 'right' });
+    doc.setFillColor.apply(doc, PDF_RANG.matn);
+    doc.rect(M + wL - doc.getTextWidth('meʼyor') - 2, yL - 2.9, 0.5, 3.4, 'F');
+  }
+  yL += 7;
+  if (!shkalaBor) {
+    yL = yoz('Tushum yoki xarajat kiritilmagan — ulushlarni hisoblab boʻlmaydi.', M, yL, wL, 'regular', 9, PDF_RANG.ikkinchi);
+  } else {
+    const yarim = wL / 2;
+    const meyorli = n.guruhlar.filter(function (g) { return g.meyor !== null && g.meyor !== undefined; });
+    meyorli.sort(function (a, b) {
+      if (a.oshgan !== b.oshgan) return a.oshgan ? -1 : 1;
+      return a.oshgan ? b.ortiqcha - a.ortiqcha : b.nisbat - a.nisbat;
+    });
+    meyorli.forEach(function (g) {
+      shrift('semi', 9.5);
+      matn(g.qisqa, M, yL);
+      const nomW = doc.getTextWidth(g.qisqa);
+      shrift('regular', 8, PDF_RANG.ikkinchi);
+      matn(formatFoiz(g.ulush) + ' / ' + g.meyor + '%', M + nomW + 2, yL);
+      if (g.oshgan) {
+        shrift('semi', 9, PDF_RANG.qizil);
+        matn('+' + formatMln(g.ortiqcha), M + wL, yL, { align: 'right' });
+      } else {
+        shrift('regular', 8, PDF_RANG.ikkinchi);
+        matn('meʼyorda', M + wL, yL, { align: 'right' });
+      }
+      const by = yL + 2;
+      const r = g.nisbat || 0;
+      doc.setFillColor.apply(doc, PDF_RANG.trek);
+      doc.rect(M, by, wL, 2, 'F');
+      doc.setFillColor.apply(doc, PDF_RANG.neytral);
+      doc.rect(M, by, Math.min(r, 1) * yarim, 2, 'F');
+      if (g.oshgan) {
+        const ortiq = (Math.min(r, 2) - 1) * yarim;
+        doc.setFillColor.apply(doc, PDF_RANG.qizil);
+        doc.rect(M + yarim + 0.5, by, Math.max(0.8, ortiq - 0.5), 2, 'F');
+      }
+      doc.setFillColor.apply(doc, PDF_RANG.matn);
+      doc.rect(M + yarim - 0.25, by - 1, 0.5, 4, 'F');
+      yL += 9.4;
+    });
+    const boshqa = n.guruhlar.find(function (g) { return g.meyor === null; });
+    if (boshqa && boshqa.summa > 0) {
+      shrift('semi', 9.5);
+      matn('Boshqa', M, yL);
+      const bw = doc.getTextWidth('Boshqa');
+      shrift('regular', 8, PDF_RANG.ikkinchi);
+      matn(formatFoiz(boshqa.ulush), M + bw + 2, yL);
+      matn('meʼyor yoʻq', M + wL, yL, { align: 'right' });
+      yL += 6;
+    }
+  }
+
+  shrift('xb', 11);
+  matn('Nima qilish kerak', xR, yR);
+  yR += 7;
+  if (n.amallar.length) {
+    n.amallar.slice(0, 3).forEach(function (g, i) {
+      const a = amalMatni(g);
+      doc.setFillColor.apply(doc, PDF_RANG.brend);
+      doc.circle(xR + 2.2, yR - 1.2, 2.2, 'F');
+      shrift('xb', 7.5, [255, 255, 255]);
+      matn(String(i + 1), xR + 2.2, yR - 0.2, { align: 'center' });
+      yR = yoz(a.sarlavha, xR + 7, yR, wR - 7, 'semi', 9.5);
+      yR = yoz('Hozir ' + formatMln(g.summa) + ' · meʼyor ' + formatMln(g.meyorSumma) + ' (' + g.meyor + '%)',
+        xR + 7, yR, wR - 7, 'regular', 8, PDF_RANG.ikkinchi);
+      if (a.maslahat) yR = yoz(a.maslahat, xR + 7, yR, wR - 7, 'regular', 8, PDF_RANG.ikkinchi);
+      yR += 2.5;
+    });
+    if (n.amallar.length > 3) {
+      yR = yoz('Yana ' + (n.amallar.length - 3) + ' ta guruh meʼyordan oshgan — chapdagi roʻyxatga qarang.',
+        xR, yR, wR, 'regular', 8, PDF_RANG.ikkinchi) + 2;
+    }
+    const keyin = keyinMatni(n);
+    if (keyin) {
+      const tus = {
+        yashil: [PDF_RANG.yashilOch, PDF_RANG.yashilToq],
+        sariq: [PDF_RANG.sariqOch, PDF_RANG.sariqToq],
+        qizil: [PDF_RANG.qizilOch, PDF_RANG.qizilToq]
+      }[n.keyinStatus];
+      shrift('semi', 9);
+      const kq = doc.splitTextToSize(keyin, wR - 6);
+      const tepa = yR - 2;
+      const kh = 7 + (kq.length - 1) * qator(9);
+      doc.setFillColor.apply(doc, tus[0]);
+      doc.rect(xR, tepa, wR, kh, 'F');
+      shrift('semi', 9, tus[1]);
+      matn(kq, xR + 3, tepa + 4.6);
+      yR = tepa + kh + 6;
+    }
+  } else {
+    yR = yoz(n.status === 'yashil' ? 'Hech narsa oʻzgartirish shart emas — byudjet tasdiqlashga tayyor.' : keyingiQadamMatni(n),
+      xR, yR, wR, 'regular', 9.5) + 2;
+  }
+  y = Math.max(yL, yR) + 4;
+
+  // Tekshirish kerak boʻlgan joylar
   if (n.ogohlar.length) {
-    bolimSarlavha('Ogohlantirishlar');
+    bolimSarlavha('Tekshiring');
     n.ogohlar.forEach(function (o) {
       shrift('regular', 9.5);
       const qatorlar = doc.splitTextToSize(o, ICHKI - 7);
-      yangiSahifaKerakmi(qatorlar.length * 4.4 + 2);
+      yangiSahifaKerakmi(qatorlar.length * qator(9.5) + 2);
       nuqta(M + 1.8, y - 1.2, PDF_RANG.sariq, 1.8);
       shrift('xb', 7, [255, 255, 255]);
       matn('!', M + 1.8, y - 0.1, { align: 'center' });
       shrift('regular', 9.5);
       matn(qatorlar, M + 6, y);
-      y += qatorlar.length * 4.4 + 1.4;
+      y += qatorlar.length * qator(9.5) + 1.4;
     });
     y += 3;
   }
-
-  // Tavsiyalar
-  bolimSarlavha('Tavsiyalar');
-  n.tavsiyalar.forEach(function (t, i) {
-    shrift('regular', 9.5);
-    const qatorlar = doc.splitTextToSize(t, ICHKI - 7);
-    yangiSahifaKerakmi(qatorlar.length * 4.4 + 2);
-    shrift('xb', 9.5, PDF_RANG.brend);
-    matn((i + 1) + '.', M, y);
-    shrift('regular', 9.5);
-    matn(qatorlar, M + 6, y);
-    y += qatorlar.length * 4.4 + 1.4;
-  });
-  y += 3;
 
   // Filial maqsadi va 15-savol
   bolimSarlavha('Filial izohi');
@@ -249,13 +353,17 @@ async function yaratPDF(n, j, lid) {
     'Maqsad: ' + (tanlovMatni('maqsad', j.maqsad) || '—') + '. Oʻtgan oyga nisbatan jami xarajat: ' +
       (tanlovMatni('ozgarish', j.ozgarish) || '—').toLowerCase() + '.',
     'Rejadan tashqari katta xarajat: ' + (izoh || 'yoʻq')
-  ].forEach(function (t) {
+  ].concat(n.maqsadTavsiya ? ['Maslahat: ' + n.maqsadTavsiya] : []).forEach(function (t) {
     shrift('regular', 9.5);
     const qatorlar = doc.splitTextToSize(t, ICHKI);
-    yangiSahifaKerakmi(qatorlar.length * 4.4 + 2);
+    yangiSahifaKerakmi(qatorlar.length * qator(9.5) + 2);
     matn(qatorlar, M, y);
-    y += qatorlar.length * 4.4 + 1.4;
+    y += qatorlar.length * qator(9.5) + 1.4;
   });
+  yangiSahifaKerakmi(8);
+  y += 3;
+  shrift('regular', 8.5, PDF_RANG.ikkinchi);
+  matn('Moddalar boʻyicha toʻliq taqsimot va imzolar — keyingi sahifada.', M, y);
 
   /* ---------- 2-sahifa: moddalar boʻyicha toʻliq taqsimot ---------- */
 

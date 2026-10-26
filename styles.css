@@ -31,6 +31,12 @@
   --yashil-och: #E8F4EC;
   --sariq-och: #FBF3E0;
   --qizil-och: #FBE9E9;
+  --karta: #F7F3F0;       /* raqam kartochkalari foni */
+  --trek: #F1ECE8;        /* chiziqli koʻrsatkichning boʻsh qismi */
+  --neytral: #CFC6BF;     /* meʼyor ichidagi xarajat */
+  --zona-qizil: #F0B4B4;
+  --zona-sariq: #F0D590;
+  --zona-yashil: #B4DCC0;
   --radius: 12px;
   --tugma: 52px;
 }
@@ -471,29 +477,106 @@ select:focus { outline: none; border-color: var(--brend); }
 .status-qizil { background: var(--qizil-och); border-color: var(--qizil); }
 .status-qizil .status-nom { color: var(--qizil); }
 
-.raqamlar { margin: 20px 0 0; }
-.raqamlar div {
+/* Marja shkalasi (status kartochkasi ichida) */
+.shkala { margin-top: 18px; }
+.shkala-bosh {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: 12px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--chiziq);
+  font-size: 14px;
+  color: var(--ikkinchi);
 }
-.raqamlar dt { color: var(--ikkinchi); font-size: 15px; }
-.raqamlar dd {
-  margin: 0;
-  font-weight: 800;
-  font-size: 20px;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+.shkala-bosh strong { font-size: 24px; font-weight: 800; color: var(--matn); }
+.shkala-chiziq { position: relative; display: flex; gap: 2px; height: 12px; margin-top: 8px; }
+.zona-qizil { background: var(--zona-qizil); border-radius: 6px 0 0 6px; }
+.zona-sariq { background: var(--zona-sariq); }
+.zona-yashil { background: var(--zona-yashil); border-radius: 0 6px 6px 0; }
+.shkala-belgi {
+  position: absolute;
+  top: -5px;
+  width: 6px;
+  height: 22px;
+  border-radius: 3px;
+  background: var(--matn);
+  box-shadow: 0 0 0 2px var(--fon);
+  transform: translateX(-50%);
 }
-.raqamlar dd span { font-weight: 400; font-size: 14px; color: var(--ikkinchi); }
-.raqamlar .marja dd { font-size: 26px; }
+.shkala-raqam { position: relative; height: 18px; margin-top: 6px; font-size: 12px; color: var(--ikkinchi); }
+.shkala-raqam span { position: absolute; top: 0; transform: translateX(-50%); }
+.shkala-raqam span:first-child { left: 0; transform: none; }
+.shkala-raqam .oxiri { right: 0; transform: none; }
+.shkala-matn { margin-top: 12px; font-weight: 600; font-size: 15px; line-height: 1.45; }
+.shkala-qoida { margin-top: 4px; font-size: 13px; color: var(--ikkinchi); }
 
-.oshgan { margin-top: 16px; font-size: 15px; }
-.ogohlar { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 10px; }
-.pdf-eslatma { margin-top: 20px; color: var(--ikkinchi); font-size: 15px; }
+/* Tushum, xarajat, foyda */
+.raqamlar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0 0;
+}
+.raqamlar div { background: var(--karta); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+.raqamlar dt { font-size: 13px; color: var(--ikkinchi); }
+.raqamlar dd { margin: 2px 0 0; font-weight: 800; font-size: 22px; line-height: 1.15; white-space: nowrap; }
+.raqamlar dd span { display: block; font-weight: 400; font-size: 12px; color: var(--ikkinchi); }
+
+/* Natija bloklari */
+.blok { margin-top: 32px; }
+.blok-bosh { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.blok-sarlavha { font-size: 19px; font-weight: 800; line-height: 1.25; margin: 0 0 14px; }
+
+.qadamlar { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+.qadamlar li { display: flex; gap: 12px; }
+.qadam-raqam {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--brend);
+  color: #fff;
+  font-weight: 800;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.qadam-matn { font-size: 16px; line-height: 1.4; }
+.qadam-matn strong { font-weight: 800; }
+.qadam-izoh { margin-top: 3px; font-size: 14px; color: var(--ikkinchi); }
+.qadam-maslahat { margin-top: 4px; font-size: 13px; line-height: 1.4; color: var(--ikkinchi); }
+.keyin { margin-top: 18px; padding: 12px 14px; border-radius: 10px; font-weight: 600; }
+.keyin-yashil { background: var(--yashil-och); color: #145C29; }
+.keyin-sariq { background: var(--sariq-och); color: #6B4A00; }
+.keyin-qizil { background: var(--qizil-och); color: #8E1F1F; }
+
+.ogohlar { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+
+/* Guruhlar meʼyorga nisbatan: meʼyor chizigʻi doim oʻrtada */
+.meyor-legend { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ikkinchi); }
+.meyor-legend::before { content: ""; width: 2px; height: 14px; background: var(--matn); }
+.meyor-royxat { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.meyor-bosh { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 15px; }
+.meyor-bosh strong { font-weight: 600; }
+.meyor-foiz { font-size: 13px; color: var(--ikkinchi); white-space: nowrap; }
+.meyor-ortiq { font-weight: 800; color: var(--qizil); white-space: nowrap; }
+.meyor-ok { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--ikkinchi); white-space: nowrap; }
+.belgi-ok { color: var(--yashil); }
+.meyor-chiziq { position: relative; height: 8px; margin-top: 7px; border-radius: 4px; background: var(--trek); }
+.meyor-ichida { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--neytral); }
+.oshgan .meyor-ichida { border-radius: 4px 0 0 4px; }
+.meyor-oshgan {
+  position: absolute;
+  left: calc(50% + 2px);
+  top: 0;
+  bottom: 0;
+  min-width: 3px;
+  border-radius: 0 4px 4px 0;
+  background: var(--qizil);
+}
+.meyor-tik { position: absolute; left: 50%; top: -3px; width: 2px; height: 14px; margin-left: -1px; background: var(--matn); }
+.meyor-eslatma { margin-top: 14px; font-size: 13px; color: var(--ikkinchi); }
+
+.pdf-eslatma { margin-top: 28px; color: var(--ikkinchi); font-size: 15px; }
 
 /* ---------- Yakun ---------- */
 

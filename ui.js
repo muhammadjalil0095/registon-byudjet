@@ -301,12 +301,19 @@ function savolEkrani(n) {
     '</form>';
 }
 
+// Marja shkalasi chegarasi: 0–40%. Undan yuqori marja oxirida koʻrsatiladi.
+const SHKALA_MAKS = 40;
+
+const BELGI_OK = '<svg class="belgi-ok" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">' +
+  '<path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
 function natijaEkrani() {
   const n = holat.natija = hisobla(holat.javob);
   const st = STATUSLAR[n.status];
-  const oshgan = n.oshganlar.length
-    ? n.oshganlar.length + ' ta: ' + n.oshganlar.map(function (g) { return g.qisqa; }).join(', ')
-    : 'yoʻq';
+  const korsatkich = function (yorliq, summa) {
+    const q = qisqaSumma(summa);
+    return '<div><dt>' + yorliq + '</dt><dd>' + q.son + '<span>' + (q.birlik ? q.birlik + ' ' : '') + 'soʻm</span></dd></div>';
+  };
   return '' +
     '<section class="ekran natija">' +
       '<p class="ustki">' + e(holat.lid.filial) + ' · ' + e(oyNomi(holat.javob.oy)) + ' byudjeti</p>' +
@@ -314,23 +321,123 @@ function natijaEkrani() {
       '<div class="status status-' + n.status + '">' +
         '<p class="status-nom">' + st.nom + '</p>' +
         '<p class="status-xulosa">' + e(n.xulosa) + '</p>' +
+        marjaShkalasi(n) +
       '</div>' +
       '<dl class="raqamlar">' +
-        '<div><dt>Reja tushum</dt><dd>' + formatSon(n.tushum) + ' <span>soʻm</span></dd></div>' +
-        '<div><dt>Jami xarajat</dt><dd>' + formatSon(n.jami) + ' <span>soʻm</span></dd></div>' +
-        '<div class="marja"><dt>Marja</dt><dd>' + formatFoiz(n.marja) + '</dd></div>' +
+        korsatkich('Tushum', n.tushum) + korsatkich('Xarajat', n.jami) + korsatkich('Foyda', n.foyda) +
       '</dl>' +
-      '<p class="oshgan">Meʼyordan oshgan guruhlar: <strong>' + e(oshgan) + '</strong></p>' +
-      (n.ogohlar.length
-        ? '<ul class="ogohlar" aria-label="Ogohlantirishlar">' + n.ogohlar.map(function (o) { return '<li>' + e(o) + '</li>'; }).join('') + '</ul>'
-        : '') +
       '<div data-tg-blok>' + tgBlok() + '</div>' +
-      '<p class="pdf-eslatma">Toʻliq taqsimot, tavsiyalar va imzo varagʻi — PDFda.</p>' +
+      qadamlarBloki(n) +
+      ogohlarBloki(n) +
+      meyorBloki(n) +
+      '<p class="pdf-eslatma">Moddalar boʻyicha toʻliq taqsimot va imzo varagʻi — PDFda.</p>' +
       '<div class="harakatlar">' +
         '<button type="button" class="tugma asosiy" data-amal="pdf" data-pdf-tugma disabled>PDF tayyorlanmoqda…</button>' +
         '<button type="button" class="tugma matnli" data-amal="tahrir">Javoblarni oʻzgartirish</button>' +
         '<button type="button" class="tugma matnli" data-amal="yangi">Yangi byudjet tuzish</button>' +
       '</div>' +
+    '</section>';
+}
+
+// 1-variant: marja qaysi zonada va keyingi rangga chiqish uchun nima qilish kerak
+function marjaShkalasi(n) {
+  const qadam = '<p class="shkala-matn">' + e(keyingiQadamMatni(n)) + '</p>';
+  if (n.marja === null || n.jami <= 0) return qadam;
+  const q = STATUS_CHEGARA.qizil;
+  const y = STATUS_CHEGARA.yashil;
+  const joy = Math.max(0, Math.min(SHKALA_MAKS, n.marja)) / SHKALA_MAKS * 100;
+  return '' +
+    '<div class="shkala">' +
+      '<p class="shkala-bosh"><span>Marja</span><strong>' + formatFoiz(n.marja) + '</strong></p>' +
+      '<div class="shkala-chiziq" role="img" aria-label="Marja ' + formatFoiz(n.marja) + '. Qizil — ' + q +
+        '% dan past, sariq — ' + q + '–' + y + '%, yashil — ' + y + '% va undan yuqori.">' +
+        '<span class="zona zona-qizil" style="flex:' + q + '"></span>' +
+        '<span class="zona zona-sariq" style="flex:' + (y - q) + '"></span>' +
+        '<span class="zona zona-yashil" style="flex:' + (SHKALA_MAKS - y) + '"></span>' +
+        '<span class="shkala-belgi" style="left:' + joy.toFixed(1) + '%"></span>' +
+      '</div>' +
+      '<div class="shkala-raqam" aria-hidden="true">' +
+        '<span>0</span>' +
+        '<span style="left:' + (q / SHKALA_MAKS * 100) + '%">' + q + '%</span>' +
+        '<span style="left:' + (y / SHKALA_MAKS * 100) + '%">' + y + '%</span>' +
+        '<span class="oxiri">' + SHKALA_MAKS + '%</span>' +
+      '</div>' +
+    '</div>' +
+    qadam +
+    (n.status !== 'yashil' ? '<p class="shkala-qoida">' + e(yashilQoidasi()) + '</p>' : '');
+}
+
+// 4-variant: har bir oshgan guruh uchun soʻmdagi aniq qadam
+function qadamlarBloki(n) {
+  if (!n.amallar.length) return '';
+  const keyin = keyinMatni(n);
+  return '' +
+    '<section class="blok" aria-labelledby="qadam-sarlavha">' +
+      '<h2 class="blok-sarlavha" id="qadam-sarlavha">Nima qilish kerak</h2>' +
+      '<ol class="qadamlar">' +
+        n.amallar.map(function (g, i) {
+          const a = amalMatni(g);
+          return '<li><span class="qadam-raqam" aria-hidden="true">' + (i + 1) + '</span><div>' +
+            '<p class="qadam-matn"><strong>' + e(a.guruh) + '</strong> — ' + e(a.amal) + '</p>' +
+            '<p class="qadam-izoh">' + e(a.izoh) + '</p>' +
+            (a.maslahat ? '<p class="qadam-maslahat">' + e(a.maslahat) + '</p>' : '') +
+          '</div></li>';
+        }).join('') +
+      '</ol>' +
+      (keyin ? '<p class="keyin keyin-' + n.keyinStatus + '">' + e(keyin) + '</p>' : '') +
+    '</section>';
+}
+
+function ogohlarBloki(n) {
+  if (!n.ogohlar.length) return '';
+  return '' +
+    '<section class="blok" aria-labelledby="ogoh-sarlavha">' +
+      '<h2 class="blok-sarlavha" id="ogoh-sarlavha">Tekshiring</h2>' +
+      '<ul class="ogohlar">' + n.ogohlar.map(function (o) { return '<li>' + e(o) + '</li>'; }).join('') + '</ul>' +
+    '</section>';
+}
+
+// 3-variant: har bir guruh oʻz meʼyoriga nisbatan. Meʼyor chizigʻi doim oʻrtada,
+// chiziq oʻng tomoni — meʼyordan ikki baravargacha.
+function meyorBloki(n) {
+  if (n.tushum <= 0 || n.jami <= 0) return '';
+  const meyorli = n.guruhlar.filter(function (g) { return g.meyor !== null && g.meyor !== undefined; });
+  meyorli.sort(function (a, b) {
+    if (a.oshgan !== b.oshgan) return a.oshgan ? -1 : 1;
+    return a.oshgan ? b.ortiqcha - a.ortiqcha : b.nisbat - a.nisbat;
+  });
+  const qator = function (g) {
+    const r = g.nisbat || 0;
+    const ichida = Math.min(r, 1) * 50;
+    const ortiq = g.oshgan ? (Math.min(r, 2) - 1) * 50 : 0;
+    return '' +
+      '<li class="meyor-qator' + (g.oshgan ? ' oshgan' : '') + '">' +
+        '<p class="meyor-bosh"><span><strong>' + e(g.qisqa) + '</strong> <span class="meyor-foiz">' +
+          formatFoiz(g.ulush) + ' · meʼyor ' + g.meyor + '%</span></span>' +
+          (g.oshgan
+            ? '<span class="meyor-ortiq">+' + formatMln(g.ortiqcha) + '</span>'
+            : '<span class="meyor-ok">' + BELGI_OK + 'meʼyorda</span>') +
+        '</p>' +
+        '<div class="meyor-chiziq" aria-hidden="true">' +
+          '<span class="meyor-ichida" style="width:' + ichida.toFixed(1) + '%"></span>' +
+          (ortiq > 0 ? '<span class="meyor-oshgan" style="width:calc(' + ortiq.toFixed(1) + '% - 2px)"></span>' : '') +
+          '<span class="meyor-tik"></span>' +
+        '</div>' +
+      '</li>';
+  };
+  const boshqa = n.guruhlar.find(function (g) { return g.meyor === null; });
+  return '' +
+    '<section class="blok" aria-labelledby="meyor-sarlavha">' +
+      '<div class="blok-bosh"><h2 class="blok-sarlavha" id="meyor-sarlavha">Guruhlar meʼyorga nisbatan</h2>' +
+        '<span class="meyor-legend" aria-hidden="true">meʼyor</span></div>' +
+      '<ul class="meyor-royxat">' +
+        meyorli.map(qator).join('') +
+        (boshqa && boshqa.summa > 0
+          ? '<li class="meyor-qator"><p class="meyor-bosh"><span><strong>Boshqa</strong> <span class="meyor-foiz">' +
+            formatFoiz(boshqa.ulush) + '</span></span><span class="meyor-foiz">meʼyor yoʻq</span></p></li>'
+          : '') +
+      '</ul>' +
+      '<p class="meyor-eslatma">Chiziqdan oʻtgan qizil qism — meʼyordan oshgan xarajat.</p>' +
     '</section>';
 }
 
