@@ -515,6 +515,16 @@ select:focus { outline: none; border-color: var(--brend); }
 .oshgan { margin-top: 16px; font-size: 15px; }
 .ogohlar { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 10px; }
 .pdf-eslatma { margin-top: 20px; color: var(--ikkinchi); font-size: 15px; }
+.yuborilmagan {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 2px solid var(--brend);
+  border-radius: var(--radius);
+  font-size: 15px;
+  line-height: 1.45;
+}
+.yuborilmagan strong { display: block; font-weight: 800; }
+.yuborilmagan + .harakatlar { margin-top: 12px; }
 
 /* ---------- Yakun ---------- */
 

@@ -340,6 +340,8 @@ function natijaEkrani() {
         ? '<ul class="ogohlar" aria-label="Ogohlantirishlar">' + n.ogohlar.map(function (o) { return '<li>' + e(o) + '</li>'; }).join('') + '</ul>'
         : '') +
       '<p class="pdf-eslatma">Toʻliq taqsimot, tavsiyalar va imzo varagʻi — PDFda.</p>' +
+      '<p class="yuborilmagan"><strong>Byudjet hali Moliya boʻlimiga yuborilmagan.</strong> ' +
+        'Yuborish uchun quyidagi tugmani bosing va filial maʼlumotlarini kiriting.</p>' +
       '<div class="harakatlar">' +
         '<button type="button" class="tugma asosiy" data-amal="formaga">Tasdiqlashga yuborish va PDF olish</button>' +
         '<button type="button" class="tugma matnli" data-amal="tahrir">Javoblarni oʻzgartirish</button>' +
