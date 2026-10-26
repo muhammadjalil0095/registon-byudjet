@@ -56,6 +56,10 @@
   const c = hisobla(Object.assign({}, A, { oquvchilar: 0 }));
   tekshir('Tushum 0: status', c.status, 'qizil');
 
+  const x0 = hisobla({ oquvchilar: 65, tolov: 500000, maqsad: 'barqaror', ozgarish: 'teng', katta_xarajat: 'yoq' });
+  tekshir('Xarajat 0: status', x0.status, 'qizil');
+  tekshir('Xarajat 0: xulosa', x0.xulosa, 'Xarajat kiritilmagan. Byudjetni qayta koʻrib chiqish kerak.');
+
   const d = hisobla(Object.assign({}, A, { soliq_qolda: true, soliq: 5000000, mayda_qurilish: 1500000 }));
   tekshir('Qoʻlda soliq + mayda qurilish: ogohlantirishlar', d.ogohlar.length, 3);
 

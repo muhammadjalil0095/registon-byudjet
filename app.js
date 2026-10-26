@@ -213,6 +213,9 @@ function hisobla(j) {
   if (tushum <= 0) {
     status = 'qizil';
     xulosa = 'Tushum kiritilmagan. ' + STATUSLAR.qizil.xulosa;
+  } else if (jami <= 0) {
+    status = 'qizil';
+    xulosa = 'Xarajat kiritilmagan. ' + STATUSLAR.qizil.xulosa;
   } else {
     if (marja < STATUS_CHEGARA.qizil || jami > tushum || oshganlar.length >= STATUS_CHEGARA.qizilOshganGuruh) {
       status = 'qizil';

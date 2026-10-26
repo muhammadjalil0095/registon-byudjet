@@ -11,7 +11,7 @@ function telegramXabari(n, j, lid) {
   const st = STATUSLAR[n.status];
   const diqqat = n.status !== 'yashil' && n.oshganlar.length
     ? n.oshganlar.map(function (g) { return g.qisqa + ' ' + formatFoiz(g.ulush) + ' (meʼyor ' + g.meyor + '%)'; }).join(', ')
-    : (n.tushum <= 0 ? 'tushum kiritilmagan' : 'yoʻq');
+    : (n.tushum <= 0 ? 'tushum kiritilmagan' : n.jami <= 0 ? 'xarajat kiritilmagan' : 'yoʻq');
   const qatorlar = [
     '💰 Yangi byudjet · ' + oyNomi(j.oy),
     'Filial: ' + lid.filial,
@@ -23,6 +23,7 @@ function telegramXabari(n, j, lid) {
     'Status: ' + st.belgi + ' ' + st.nom,
     'Diqqat: ' + diqqat
   ];
+  n.ogohlar.forEach(function (o) { qatorlar.push('⚠️ ' + o); });
   const izoh = j.katta_xarajat === 'ha' ? String(j.katta_izoh || '').trim() : '';
   if (izoh) qatorlar.push('Katta xarajat: ' + izoh);
   qatorlar.push('Kod: ' + lid.kod);
