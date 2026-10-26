@@ -17,8 +17,8 @@ const EKRANLAR = {
   3: { tur: 'son', id: 'tolov', sarlavha: 'Bir oʻquvchining oʻrtacha oylik toʻlovi', yorliq: 'Oʻrtacha oylik toʻlov',
     birlik: 'soʻm', tushum: true },
   4: { tur: 'guruh', sarlavha: 'Ish haqi', izoh: 'Avans va oylik qoʻshilib shu oyning ish haqi fondini beradi.' },
-  5: { tur: 'soliq', sarlavha: 'Ijtimoiy soliq',
-    izoh: 'Ish haqi fondining ' + SOLIQ_FOIZI + '% i avtomatik hisoblandi. Toʻgʻri boʻlsa, tasdiqlab keyingisiga oʻting.' },
+  5: { tur: 'son', id: 'soliq', sarlavha: 'Ijtimoiy soliq', yorliq: 'Ijtimoiy soliq summasi', birlik: 'soʻm',
+    izoh: 'Rasmiy ishlaydigan xodimlar soniga qarab shu oy toʻlanadigan ijtimoiy soliq summasini kiriting.' },
   6: { tur: 'guruh', sarlavha: 'Bonuslar' },
   7: { tur: 'guruh', sarlavha: 'Bino', izoh: 'Kommunal — shu byudjet oyiga tegishli summa.' },
   8: { tur: 'guruh', sarlavha: 'Aloqa va bank' },
@@ -284,17 +284,6 @@ function savolEkrani(n) {
         summaMaydoni(avaz, inputQiymati('avaz_aka'), j.markaziy !== 'ha');
     }
     tana += '<p class="guruh-jami">Guruh jami: <strong data-jonli="guruh">0 soʻm</strong></p>';
-  } else if (ek.tur === 'soliq') {
-    const n0 = hisobla(j);
-    const qiymat = j.soliq_qolda ? inputQiymati('soliq') : formatSon(n0.soliqAvto);
-    tana = '' +
-      '<div class="soliq-hisob">' +
-        '<p><span>Ish haqi fondi</span><strong>' + formatSom(n0.fond) + '</strong></p>' +
-        '<p><span>× ' + SOLIQ_FOIZI + '%</span><strong>' + formatSom(n0.soliqAvto) + '</strong></p>' +
-      '</div>' +
-      summaMaydoni({ id: 'soliq', nom: 'Ijtimoiy soliq summasi' }, qiymat) +
-      '<p class="ogoh" data-jonli="soliq-ogoh" hidden>Soliq summasi ish haqi fondining ' + SOLIQ_FOIZI + '% iga mos emas.</p>' +
-      '<button type="button" class="tugma matnli" data-amal="soliq-avto" hidden>Avtomatik summaga qaytarish</button>';
   } else if (ek.tur === 'tanlov') {
     tana = tanlovGuruhi(ek.id, TANLOVLAR[ek.variantlar], j[ek.id], 'sarlavha');
     if (n === 15) {
@@ -433,11 +422,6 @@ function jonliYangila(n) {
     el.textContent = el.textContent.replace(/(\d) (?=\d)/g, '$1 ').replace(/ soʻm/g, ' soʻm');
     el.classList.toggle('mos', mos);
     el.classList.toggle('mos-emas', h.tushum > 0 && !mos && h.oqituvchi > 0);
-  }
-  if (ek.tur === 'soliq') {
-    const farq = j.soliq_qolda && son(j.soliq) !== hisobla(j).soliqAvto;
-    ilova.querySelector('[data-jonli="soliq-ogoh"]').hidden = !farq;
-    ilova.querySelector('[data-amal="soliq-avto"]').hidden = !j.soliq_qolda;
   }
 }
 
@@ -632,11 +616,6 @@ function hodisalarniUla() {
     } else if (amal === 'yoq') {
       moddalarEkrani(n).forEach(function (m) { holat.javob[m.id] = 0; });
       korsat(n + 1);
-    } else if (amal === 'soliq-avto') {
-      holat.javob.soliq_qolda = false;
-      delete holat.javob.soliq;
-      korsat(5, false);
-      ilova.querySelector('#m-soliq').focus();
     } else if (amal === 'pdf') {
       if (holat.pdf) pdfniYukla(holat.pdf);
     } else if (amal === 'tahrir') {
@@ -663,9 +642,6 @@ function hodisalarniUla() {
       if (t.hasAttribute('data-summa')) {
         const v = summaniFormatla(t, t.name === 'oquvchilar' ? 6 : 12);
         holat.javob[t.name] = v;
-        if (t.name === 'soliq') {
-          holat.javob.soliq_qolda = (v || 0) !== hisobla(Object.assign({}, holat.javob, { soliq_qolda: false })).soliqAvto;
-        }
       } else if (t.name === 'katta_izoh') {
         holat.javob.katta_izoh = t.value;
       }

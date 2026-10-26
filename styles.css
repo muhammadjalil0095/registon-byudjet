@@ -351,21 +351,6 @@ select:focus { outline: none; border-color: var(--brend); }
 }
 .guruh-jami strong { font-weight: 800; white-space: nowrap; }
 
-.soliq-hisob {
-  padding: 12px 14px;
-  background: var(--och);
-  border-radius: var(--radius);
-  margin-bottom: 12px;
-}
-.soliq-hisob p {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 15px;
-}
-.soliq-hisob p + p { margin-top: 4px; }
-.soliq-hisob strong { white-space: nowrap; }
-
 .ogoh, .ogohlar li {
   position: relative;
   padding-left: 28px;

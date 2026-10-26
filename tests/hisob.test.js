@@ -8,7 +8,7 @@
   const A = {
     oquvchilar: 320, tolov: 550000,
     menejer_oylik: 6000000, menejer_avans: 3000000, oqituvchi_oylik: 36000000, oqituvchi_avans: 14000000,
-    farrosh: 3000000, support: 4000000,
+    farrosh: 3000000, support: 4000000, soliq: 7920000,
     daraja_bonusi: 3000000, natija_bonusi: 1000000,
     arenda: 18000000, elektr: 2000000, suv: 800000, chiqindi: 700000,
     telefon_internet: 900000, bank: 1200000,
@@ -31,7 +31,7 @@
 
   const a = hisobla(A);
   tekshir('A: tushum', a.tushum, 176000000);
-  tekshir('A: soliq (avto)', a.soliq, 7920000);
+  tekshir('A: soliq (qoʻlda kiritilgan)', a.soliq, 7920000);
   tekshir('A: xarajat', a.jami, 120320000);
   tekshir('A: foyda', a.foyda, 55680000);
   tekshir('A: marja', f1(a.marja), '31.6');
@@ -60,8 +60,9 @@
   tekshir('Xarajat 0: status', x0.status, 'qizil');
   tekshir('Xarajat 0: xulosa', x0.xulosa, 'Xarajat kiritilmagan. Byudjetni qayta koʻrib chiqish kerak.');
 
-  const d = hisobla(Object.assign({}, A, { soliq_qolda: true, soliq: 5000000, mayda_qurilish: 1500000 }));
-  tekshir('Qoʻlda soliq + mayda qurilish: ogohlantirishlar', d.ogohlar.length, 3);
+  const d = hisobla(Object.assign({}, A, { soliq: 5000000, mayda_qurilish: 1500000 }));
+  tekshir('Boshqa soliq summasi: ogohlantirish yoʻq; mayda qurilish: bor', d.ogohlar.length, 2);
+  tekshir('Soliq kiritilmasa 0', hisobla(Object.assign({}, A, { soliq: undefined })).soliq, 0);
 
   const xatolar = natijalar.filter(function (n) { return !n.ok; });
   const qatorlar = natijalar.map(function (n) {

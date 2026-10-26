@@ -24,9 +24,6 @@ const STATUS_CHEGARA = {
   qizilOshganGuruh: 3
 };
 
-// Ijtimoiy soliq — ish haqi fondidan, %.
-const SOLIQ_FOIZI = 12;
-
 // Oʻqituvchi oylik + avans — reja tushumning shu foizi boʻlishi kerak.
 // Farq ruxsat etilgan chegaradan (foiz punktida) oshsa, ogohlantirish chiqadi.
 const OQITUVCHI_FOIZI = 30;
@@ -62,7 +59,7 @@ const MODDALAR = [
   { id: 'oqituvchi_avans', nom: 'Oʻqituvchi avans', guruh: 'ishhaqi', ekran: 4 },
   { id: 'farrosh', nom: 'Farrosh', izoh: 'Avans va oylik', guruh: 'ishhaqi', ekran: 4 },
   { id: 'support', nom: 'Support', izoh: 'Avans va oylik', guruh: 'ishhaqi', ekran: 4 },
-  { id: 'soliq', nom: 'Ijtimoiy soliq', izoh: 'Ish haqi fondining ' + SOLIQ_FOIZI + '%', guruh: 'ishhaqi', ekran: 5 },
+  { id: 'soliq', nom: 'Ijtimoiy soliq', izoh: 'Rasmiy ishlaydigan xodimlar soniga qarab', guruh: 'ishhaqi', ekran: 5 },
 
   { id: 'daraja_bonusi', nom: 'Daraja bonusi', izoh: 'Ustozlar va moderatorlarning daraja bonuslari va ragʻbatlar', guruh: 'bonus', ekran: 6 },
   { id: 'natija_bonusi', nom: 'Natijalar bonusi', izoh: 'IELTS, SAT, TOPIK va Milliy sertifikat natijalari uchun', guruh: 'bonus', ekran: 6 },
@@ -176,10 +173,8 @@ function hisobla(j) {
   MODDALAR.forEach(function (m) { summa[m.id] = son(j[m.id]); });
   if (j.markaziy !== 'ha') summa.avaz_aka = 0;
 
+  // Ijtimoiy soliqni filial rasmiy xodimlar soniga qarab oʻzi kiritadi.
   const fond = ISH_HAQI_FOND.reduce(function (s, id) { return s + summa[id]; }, 0);
-  const soliqAvto = Math.round(fond * SOLIQ_FOIZI / 100);
-  const soliqQolda = !!j.soliq_qolda;
-  summa.soliq = soliqQolda ? son(j.soliq) : soliqAvto;
 
   const oqituvchi = summa.oqituvchi_oylik + summa.oqituvchi_avans;
   const oqituvchiReja = Math.round(tushum * OQITUVCHI_FOIZI / 100);
@@ -260,9 +255,6 @@ function hisobla(j) {
   if (summa.arenda === 0 || summa.elektr + summa.suv + summa.chiqindi === 0) {
     ogohlar.push('Bu oy arenda/kommunal toʻlovi yoʻqmi? Tekshiring.');
   }
-  if (soliqQolda && summa.soliq !== soliqAvto) {
-    ogohlar.push('Soliq summasi ish haqi fondining ' + SOLIQ_FOIZI + '% iga mos emas.');
-  }
   if (tushum > 0 && Math.abs(oqituvchiUlush - OQITUVCHI_FOIZI) > OQITUVCHI_RUXSAT) {
     ogohlar.push('Oʻqituvchi oylik va avansi tushumning ' + formatFoiz(oqituvchiUlush) + ' i. ' +
       OQITUVCHI_FOIZI + '% boʻlishi kerak: ' + formatSom(oqituvchiReja) + '.');
@@ -277,7 +269,6 @@ function hisobla(j) {
   return {
     tushum: tushum,
     fond: fond,
-    soliqAvto: soliqAvto,
     soliq: summa.soliq,
     oqituvchi: oqituvchi,
     oqituvchiReja: oqituvchiReja,
