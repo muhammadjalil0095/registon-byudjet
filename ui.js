@@ -371,7 +371,7 @@ function formaEkrani() {
       '<div class="maydonlar">' +
         maydon('filial', 'Filial nomi',
           '<input id="l-filial" name="filial" type="text" autocomplete="organization" enterkeyhint="next" ' +
-          'placeholder="Registon Shaxriston filiali" value="' + e(l.filial) + '" aria-describedby="x-filial">') +
+          'placeholder="Registon Chilonzor filiali" value="' + e(l.filial) + '" aria-describedby="x-filial">') +
         maydon('ism', 'Masʼul ismi',
           '<input id="l-ism" name="ism" type="text" autocomplete="name" enterkeyhint="next" value="' + e(l.ism) + '" aria-describedby="x-ism">') +
         maydon('tel', 'Telefon',
