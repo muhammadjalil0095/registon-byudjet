@@ -127,6 +127,8 @@
       'Tel: +998 90 123 45 67',
       '____________________________________',
       '',
+      '👥 Oʻquvchilar: 280 nafar',
+      '🧾 Oʻrtacha chek: 550 000',
       '🟢 Tushum: 154 000 000',
       '🔴 Xarajat: 152 820 000',
       '💵 Foyda: 1 180 000 (0.8%)',
@@ -140,7 +142,9 @@
     ].join('\n'));
     const ta = telegramXabari(a, A, LID).split('\n');
     tekshir('Telegram: A sarlavhasi', ta[0], '💰 Yangi byudjet · 🟢 Yashil · Noyabr 2026');
-    tekshir('Telegram: A oshgan guruh yoʻq', ta[11], 'Meʼyordan oshgan: yoʻq');
+    tekshir('Telegram: A oshgan guruh yoʻq', ta[13], 'Meʼyordan oshgan: yoʻq');
+    tekshir('Telegram: A oʻquvchilar va oʻrtacha chek', ta.slice(7, 9).join(' | '),
+      '👥 Oʻquvchilar: 320 nafar | 🧾 Oʻrtacha chek: 550 000');
   }
 
   const xatolar = natijalar.filter(function (n) { return !n.ok; });

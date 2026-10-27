@@ -324,6 +324,8 @@ function hisobla(j) {
   }
 
   return {
+    oquvchilar: son(j.oquvchilar),
+    tolov: son(j.tolov),
     tushum: tushum,
     fond: fond,
     soliq: summa.soliq,

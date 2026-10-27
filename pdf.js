@@ -159,9 +159,11 @@ async function yaratPDF(n, j, lid) {
   const yXulosa = xulosaYonida ? yNom : yNom + 6;
   const yKYorliq = yXulosa + (xulosaQ.length - 1) * qator(10.5) + 8;
   const yKQiymat = yKYorliq + 6;
-  const yZona = yKQiymat + 5;
+  const yK2Yorliq = yKQiymat + 7.5;
+  const yK2Qiymat = yK2Yorliq + 6;
+  const yZona = yK2Qiymat + 5;
   const yZonaRaqam = yZona + 3 + 3.6;
-  const yQadam = shkalaBor ? yZonaRaqam + 6.5 : yKQiymat + 7.5;
+  const yQadam = shkalaBor ? yZonaRaqam + 6.5 : yK2Qiymat + 7.5;
   const yQoida = yQadam + qadamQ.length * qator(9.5);
   const blokH = (qoidaQ.length ? yQoida + (qoidaQ.length - 1) * qator(8.5) : yQadam + (qadamQ.length - 1) * qator(9.5)) + 5;
 
@@ -175,19 +177,33 @@ async function yaratPDF(n, j, lid) {
   shrift('semi', 10.5);
   matn(xulosaQ, xulosaYonida ? x0 + nomEni + 4 : x0, bY + yXulosa);
 
-  const korsatkichlar = [
-    ['Reja tushum, soʻm', formatMln(n.tushum)],
-    ['Jami xarajat, soʻm', formatMln(n.jami)],
-    ['Foyda, soʻm', formatMln(n.foyda)],
-    ['Marja', formatFoiz(n.marja)]
+  // 1-qator: tushum qanday hisoblangan (oʻquvchilar × oʻrtacha chek = reja tushum)
+  // 2-qator: natija (xarajat, foyda, marja)
+  const kEni = wI / 3;
+  const qatorlar3 = [
+    { y: yKYorliq, belgilar: ['×', '='], kor: [
+      ['Oʻquvchilar', formatSon(n.oquvchilar) + ' nafar'],
+      ['Oʻrtacha chek, soʻm', formatSon(n.tolov)],
+      ['Reja tushum, soʻm', formatMln(n.tushum)]
+    ] },
+    { y: yK2Yorliq, belgilar: [], kor: [
+      ['Jami xarajat, soʻm', formatMln(n.jami)],
+      ['Foyda, soʻm', formatMln(n.foyda)],
+      ['Marja', formatFoiz(n.marja)]
+    ] }
   ];
-  const kEni = wI / 4;
-  korsatkichlar.forEach(function (k, i) {
-    const x = x0 + i * kEni;
-    shrift('regular', 8, PDF_RANG.ikkinchi);
-    matn(k[0], x, bY + yKYorliq);
-    shrift('xb', 12.5);
-    matn(k[1], x, bY + yKQiymat);
+  qatorlar3.forEach(function (q) {
+    q.kor.forEach(function (k, i) {
+      const x = x0 + i * kEni;
+      shrift('regular', 8, PDF_RANG.ikkinchi);
+      matn(k[0], x, bY + q.y);
+      shrift('xb', 12.5);
+      matn(k[1], x, bY + q.y + 6);
+      if (i > 0 && q.belgilar[i - 1]) {
+        shrift('semi', 12.5, PDF_RANG.ikkinchi);
+        matn(q.belgilar[i - 1], x - 6, bY + q.y + 6, { align: 'center' });
+      }
+    });
   });
 
   if (shkalaBor) {
@@ -360,10 +376,12 @@ async function yaratPDF(n, j, lid) {
     matn(qatorlar, M, y);
     y += qatorlar.length * qator(9.5) + 1.4;
   });
-  yangiSahifaKerakmi(8);
-  y += 3;
-  shrift('regular', 8.5, PDF_RANG.ikkinchi);
-  matn('Moddalar boʻyicha toʻliq taqsimot va imzolar — keyingi sahifada.', M, y);
+  // Eslatma faqat joy boʻlsa — uning uchun alohida sahifa ochilmaydi
+  if (y + 6 <= PAST) {
+    y += 3;
+    shrift('regular', 8.5, PDF_RANG.ikkinchi);
+    matn('Moddalar boʻyicha toʻliq taqsimot va imzolar — keyingi sahifada.', M, y);
+  }
 
   /* ---------- 2-sahifa: moddalar boʻyicha toʻliq taqsimot ---------- */
 
@@ -413,8 +431,9 @@ async function yaratPDF(n, j, lid) {
   matn(formatSon(n.jami), X2.summa, y, { align: 'right' });
   matn(formatFoiz(n.tushum > 0 ? n.jami / n.tushum * 100 : null), X2.ulush - 2, y, { align: 'right' });
   y += 5.5;
-  shrift('regular', 9, PDF_RANG.ikkinchi);
-  matn('Reja tushum: ' + formatSom(n.tushum) + ' · Foyda: ' + formatSom(n.foyda) + ' · Marja: ' + formatFoiz(n.marja), M + 2, y);
+  y = yoz('Reja tushum: ' + formatSon(n.oquvchilar) + ' oʻquvchi × ' + formatSom(n.tolov) + ' (oʻrtacha chek) = ' +
+    formatSom(n.tushum), M + 2, y, ICHKI - 4, 'regular', 9, PDF_RANG.ikkinchi);
+  yoz('Foyda: ' + formatSom(n.foyda) + ' · Marja: ' + formatFoiz(n.marja), M + 2, y, ICHKI - 4, 'regular', 9, PDF_RANG.ikkinchi);
   y += 10;
 
   // Tasdiqlash bloki

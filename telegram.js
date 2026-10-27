@@ -19,6 +19,8 @@ function telegramXabari(n, j, lid) {
     'Tel: ' + lid.telKorinish,
     ajratgich,
     '',
+    '👥 Oʻquvchilar: ' + formatSon(n.oquvchilar) + ' nafar',
+    '🧾 Oʻrtacha chek: ' + formatSon(n.tolov),
     '🟢 Tushum: ' + formatSon(n.tushum),
     '🔴 Xarajat: ' + formatSon(n.jami),
     '💵 Foyda: ' + formatSon(n.foyda) + ' (' + formatFoiz(n.marja) + ')',
